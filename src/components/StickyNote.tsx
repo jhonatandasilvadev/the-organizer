@@ -127,7 +127,6 @@ function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: Stic
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
     
-    const titleText = note.title || 'esta nota'
     const confirmMessage = note.title 
       ? `Tem certeza que deseja excluir "${note.title}"?`
       : 'Tem certeza que deseja excluir esta nota?'
@@ -141,8 +140,6 @@ function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: Stic
   const isBlackNote = note.color === '#1d1d1f'
   const textColor = isBlackNote ? 'rgba(255, 255, 255, 0.9)' : 'var(--note-text)'
   const placeholderClass = isBlackNote ? 'note-content black-note' : 'note-content'
-  const deleteButtonColor = isBlackNote ? 'rgba(255, 255, 255, 0.15)' : 'var(--note-delete-bg)'
-  const deleteIconColor = isBlackNote ? 'rgba(255, 255, 255, 0.7)' : 'var(--note-delete-color)'
 
   return (
     <div

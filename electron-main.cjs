@@ -1,7 +1,4 @@
-// Arquivo preparado para futura integração com Electron
-// Para usar: npm install electron --save-dev
-// e adicionar script: "electron": "electron ."
-
+// Arquivo principal do Electron (CommonJS)
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
@@ -19,21 +16,15 @@ function createWindow() {
       enableRemoteModule: false,
     },
     backgroundColor: '#f5f5f7',
-    titleBarStyle: 'hiddenInset', // macOS style
+    titleBarStyle: 'default',
     frame: true,
     show: false,
+    autoHideMenuBar: true,
+    icon: path.join(__dirname, 'build', 'icon.png')
   });
 
-  // Em desenvolvimento, carrega do servidor Vite
-  // Em produção, carrega do build
-  const isDev = process.env.NODE_ENV === 'development';
-  
-  if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
-  }
+  // Carregar do build de produção
+  mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();

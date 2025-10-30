@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "main": "electron-main.js",
+  "main": "electron-main.cjs",
   "scripts": {
     "start": "vite --host",
     "dev": "vite",
@@ -33,7 +33,7 @@
     },
     "files": [
       "dist/**/*",
-      "electron-main.js"
+      "electron-main.cjs"
     ],
     "win": {
       "target": [
