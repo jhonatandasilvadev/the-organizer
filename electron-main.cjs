@@ -20,7 +20,8 @@ function createWindow() {
     frame: true,
     show: false,
     autoHideMenuBar: true,
-    title: 'The Organizer'
+    title: 'The Organizer',
+    icon: path.join(__dirname, 'build', 'icon.png')
   });
 
   // Carregar do build de produção
