@@ -14,7 +14,6 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      devTools: true,
     },
     backgroundColor: '#f5f5f7',
     titleBarStyle: 'default',
@@ -27,25 +26,10 @@ function createWindow() {
   // Carregar do build de produção
   const indexPath = path.join(__dirname, 'dist', 'index.html');
   
-  mainWindow.loadFile(indexPath).catch((err) => {
-    console.error('Erro ao carregar arquivo:', err);
-  });
-
-  // Abrir DevTools para debug
-  mainWindow.webContents.openDevTools();
-
-  // Log de erros
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('Falha ao carregar:', errorCode, errorDescription);
-  });
-
-  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    console.log('Console:', message);
-  });
+  mainWindow.loadFile(indexPath);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    console.log('Janela mostrada com sucesso');
   });
 
   mainWindow.on('closed', () => {
@@ -53,12 +37,7 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
-  console.log('App pronto, criando janela...');
-  console.log('__dirname:', __dirname);
-  console.log('Caminho dist:', path.join(__dirname, 'dist'));
-  createWindow();
-});
+app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
