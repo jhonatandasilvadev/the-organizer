@@ -1,4 +1,4 @@
-import { useTheme } from '../contexts/ThemeContext'
+import ThemeToggle from './ThemeToggle'
 import './Toolbar.css'
 
 interface ToolbarProps {
@@ -20,37 +20,11 @@ function Toolbar({
   zoom,
   noteCount,
 }: ToolbarProps) {
-  const { theme, toggleTheme } = useTheme()
-
   return (
     <div className="toolbar">
       <div className="toolbar-section">
         <h1 className="toolbar-title">The Organizer</h1>
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          title={`Mudar para tema ${theme === 'light' ? 'escuro' : 'claro'}`}
-        >
-          {theme === 'light' ? (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M10 3V1M10 19V17M17 10H19M1 10H3M15.657 4.343L17.071 2.929M2.929 17.071L4.343 15.657M15.657 15.657L17.071 17.071M2.929 2.929L4.343 4.343" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round"
-              />
-              <circle cx="10" cy="10" r="4" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M17 10.5C16.4 13.5 13.5 16 10 16C6 16 3 13 3 9C3 5.5 5.5 2.5 8.5 2C7.5 3 7 4.5 7 6C7 9.5 9.5 12 13 12C14.5 12 16 11.5 17 10.5Z" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </button>
+        <ThemeToggle />
       </div>
 
       <div className="toolbar-section toolbar-center">
