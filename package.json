@@ -1,16 +1,19 @@
 {
   "name": "the-organizer",
-  "private": true,
+  "private": false,
   "version": "0.0.1",
   "type": "module",
   "main": "electron-main.cjs",
+  "homepage": "https://exata-jhonatan.github.io/the-organizer",
   "scripts": {
     "start": "vite --host",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "electron:dev": "set NODE_ENV=development && electron .",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -22,6 +25,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^39.0.0",
     "electron-builder": "^26.0.12",
+    "gh-pages": "^6.1.0",
     "typescript": "^5.5.3",
     "vite": "^5.4.0"
   },

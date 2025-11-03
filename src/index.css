@@ -1,8 +1,8 @@
 :root {
   /* Light Theme */
-  --bg-primary: #f5f5f7;
-  --bg-secondary: #ffffff;
-  --bg-glass: rgba(255, 255, 255, 0.75);
+  --bg-primary: #eff0f2;
+  --bg-secondary: #f8f9fa;
+  --bg-glass: rgba(248, 249, 250, 0.75);
   --text-primary: #1d1d1f;
   --text-secondary: #6e6e73;
   --border: #d2d2d7;
@@ -14,7 +14,7 @@
   --note-placeholder: rgba(0, 0, 0, 0.3);
   --note-delete-bg: rgba(0, 0, 0, 0.1);
   --note-delete-color: rgba(0, 0, 0, 0.5);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-border: rgba(248, 249, 250, 0.3);
   
   /* Accent Colors */
   --accent-black: #1d1d1f;
