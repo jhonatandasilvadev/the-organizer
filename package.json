@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "main": "electron-main.cjs",
-  "homepage": "https://exata-jhonatan.github.io/the-organizer",
+  "homepage": "https://jhonatandasilvadev.github.io/the-organizer",
   "scripts": {
     "start": "vite --host",
     "dev": "vite",
