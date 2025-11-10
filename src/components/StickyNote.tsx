@@ -8,16 +8,35 @@ interface StickyNoteProps {
   onDelete: (id: string) => void
   onBringToFront: (id: string) => void
   gridSize: number
+  isSelected?: boolean
+  onSelect?: (id: string, shiftKey: boolean) => void
+  smoothMovement?: boolean
+  zoom?: number
+  pan?: { x: number; y: number }
+  canvasRef?: React.RefObject<HTMLDivElement>
 }
 
 type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw' | 'n' | 's' | 'e' | 'w' | null
 
-function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: StickyNoteProps) {
+function StickyNote({ 
+  note, 
+  onUpdate, 
+  onDelete, 
+  onBringToFront, 
+  gridSize,
+  isSelected = false,
+  onSelect,
+  smoothMovement = true,
+  zoom = 1,
+  pan = { x: 0, y: 0 },
+  canvasRef
+}: StickyNoteProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [resizeHandle, setResizeHandle] = useState<ResizeHandle>(null)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 })
+  const [tempPosition, setTempPosition] = useState<{ x: number; y: number } | null>(null)
   const noteRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -26,18 +45,54 @@ function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: Stic
   const titleRef = useRef<HTMLInputElement>(null)
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.target === textareaRef.current || e.target === titleRef.current) return
+    if (e.target === textareaRef.current || e.target === titleRef.current) {
+      // Se clicou no texto, apenas seleciona se Shift estiver pressionado
+      if (e.shiftKey && onSelect) {
+        e.preventDefault()
+        e.stopPropagation()
+        onSelect(note.id, true)
+      }
+      return
+    }
     
     e.preventDefault()
     e.stopPropagation()
     
+    // Se Shift está pressionado, apenas seleciona
+    if (e.shiftKey && onSelect) {
+      onSelect(note.id, true)
+      return
+    }
+    
+    // Seleciona a nota se houver callback de seleção
+    if (onSelect && !isSelected) {
+      onSelect(note.id, false)
+    }
+    
     onBringToFront(note.id)
     setIsDragging(true)
-    setDragStart({
-      x: e.clientX - note.x,
-      y: e.clientY - note.y,
-    })
-  }, [note.id, note.x, note.y, onBringToFront])
+    
+    // Converter coordenadas da tela para coordenadas do canvas
+    const canvasRect = canvasRef?.current?.getBoundingClientRect()
+    if (canvasRect) {
+      // Coordenada do mouse no espaço do canvas
+      const mouseCanvasX = (e.clientX - canvasRect.left - pan.x) / zoom
+      const mouseCanvasY = (e.clientY - canvasRect.top - pan.y) / zoom
+      
+      setDragStart({
+        x: mouseCanvasX - note.x,
+        y: mouseCanvasY - note.y,
+      })
+    } else {
+      // Fallback se não houver canvasRef
+      setDragStart({
+        x: e.clientX - note.x,
+        y: e.clientY - note.y,
+      })
+    }
+    // Limpa posição temporária ao iniciar novo arraste
+    setTempPosition(null)
+  }, [note.id, note.x, note.y, onBringToFront, onSelect, isSelected, zoom, pan, canvasRef])
 
   const handleResizeStart = useCallback((e: React.MouseEvent, handle: ResizeHandle) => {
     e.preventDefault()
@@ -57,9 +112,24 @@ function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: Stic
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        const newX = snapToGrid(e.clientX - dragStart.x)
-        const newY = snapToGrid(e.clientY - dragStart.y)
-        onUpdate(note.id, { x: newX, y: newY })
+        // Converter coordenadas da tela para coordenadas do canvas
+        const canvasRect = canvasRef?.current?.getBoundingClientRect()
+        if (canvasRect) {
+          const mouseCanvasX = (e.clientX - canvasRect.left - pan.x) / zoom
+          const mouseCanvasY = (e.clientY - canvasRect.top - pan.y) / zoom
+          
+          if (smoothMovement) {
+            // Movimento suave: atualiza posição temporária sem snap
+            const newX = mouseCanvasX - dragStart.x
+            const newY = mouseCanvasY - dragStart.y
+            setTempPosition({ x: newX, y: newY })
+          } else {
+            // Movimento com snap imediato
+            const newX = snapToGrid(mouseCanvasX - dragStart.x)
+            const newY = snapToGrid(mouseCanvasY - dragStart.y)
+            onUpdate(note.id, { x: newX, y: newY })
+          }
+        }
       } else if (isResizing && resizeHandle) {
         const deltaX = e.clientX - resizeStart.x
         const deltaY = e.clientY - resizeStart.y
@@ -100,6 +170,13 @@ function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: Stic
     }
 
     const handleMouseUp = () => {
+      if (isDragging && smoothMovement && tempPosition) {
+        // Ao soltar, aplica snap ao grid
+        const finalX = snapToGrid(tempPosition.x)
+        const finalY = snapToGrid(tempPosition.y)
+        onUpdate(note.id, { x: finalX, y: finalY })
+        setTempPosition(null)
+      }
       setIsDragging(false)
       setIsResizing(false)
       setResizeHandle(null)
@@ -114,7 +191,7 @@ function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: Stic
         window.removeEventListener('mouseup', handleMouseUp)
       }
     }
-  }, [isDragging, isResizing, dragStart, resizeStart, resizeHandle, note, onUpdate, snapToGrid, gridSize])
+  }, [isDragging, isResizing, dragStart, resizeStart, resizeHandle, note, onUpdate, snapToGrid, gridSize, smoothMovement, tempPosition, zoom, pan, canvasRef])
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate(note.id, { title: e.target.value })
@@ -141,13 +218,17 @@ function StickyNote({ note, onUpdate, onDelete, onBringToFront, gridSize }: Stic
   const textColor = isBlackNote ? 'rgba(255, 255, 255, 0.9)' : 'var(--note-text)'
   const placeholderClass = isBlackNote ? 'note-content black-note' : 'note-content'
 
+  // Usa posição temporária durante o arraste para movimento suave
+  const displayX = tempPosition?.x ?? note.x
+  const displayY = tempPosition?.y ?? note.y
+
   return (
     <div
       ref={noteRef}
-      className={`sticky-note ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+      className={`sticky-note ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isSelected ? 'selected' : ''}`}
       style={{
-        left: note.x,
-        top: note.y,
+        left: displayX,
+        top: displayY,
         width: note.width,
         height: note.height,
         backgroundColor: note.color,

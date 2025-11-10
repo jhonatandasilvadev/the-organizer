@@ -13,6 +13,8 @@ interface CanvasProps {
   pan: { x: number; y: number }
   setPan: (pan: { x: number; y: number }) => void
   gridSize: number
+  selectedNotes?: Set<string>
+  onNoteSelect?: (id: string, shiftKey: boolean) => void
 }
 
 function Canvas({
@@ -25,6 +27,8 @@ function Canvas({
   pan,
   setPan,
   gridSize,
+  selectedNotes = new Set(),
+  onNoteSelect,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const [isPanning, setIsPanning] = useState(false)
@@ -144,6 +148,12 @@ function Canvas({
             onDelete={onDeleteNote}
             onBringToFront={onBringToFront}
             gridSize={gridSize}
+            isSelected={selectedNotes.has(note.id)}
+            onSelect={onNoteSelect}
+            smoothMovement={true}
+            zoom={zoom}
+            pan={pan}
+            canvasRef={canvasRef}
           />
         ))}
       </div>

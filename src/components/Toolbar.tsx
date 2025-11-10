@@ -1,4 +1,5 @@
 import ThemeToggle from './ThemeToggle'
+import { Folder } from '../types'
 import './Toolbar.css'
 
 interface ToolbarProps {
@@ -9,6 +10,14 @@ interface ToolbarProps {
   onClearAll: () => void
   zoom: number
   noteCount: number
+  folders?: Folder[]
+  currentFolderId?: string | null
+  currentFolderName?: string | null
+  onCreateFolder?: () => void
+  onNavigateToFolder?: (folderId: string | null) => void
+  onNavigateToMaster?: () => void
+  selectedNotesCount?: number
+  onMoveSelectedToFolder?: (folderId: string | null) => void
 }
 
 function Toolbar({
@@ -19,11 +28,36 @@ function Toolbar({
   onClearAll,
   zoom,
   noteCount,
+  folders = [],
+  currentFolderId = null,
+  currentFolderName = null,
+  onCreateFolder,
+  onNavigateToFolder,
+  onNavigateToMaster,
+  selectedNotesCount = 0,
+  onMoveSelectedToFolder,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
       <div className="toolbar-section">
         <h1 className="toolbar-title">The Organizer</h1>
+        {currentFolderId && (
+          <button 
+            className="toolbar-btn back-btn" 
+            onClick={onNavigateToMaster}
+            title="Voltar para Master Workflow"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            </svg>
+            Voltar
+          </button>
+        )}
+        {currentFolderName && (
+          <div className="folder-breadcrumb">
+            <span className="folder-name">{currentFolderName}</span>
+          </div>
+        )}
         <ThemeToggle />
       </div>
 
@@ -34,6 +68,21 @@ function Toolbar({
           </svg>
           Nova Nota
         </button>
+
+        {!currentFolderId && onCreateFolder && (
+          <button className="toolbar-btn folder-btn" onClick={onCreateFolder} title="Criar Pasta">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path d="M2 4H6L8 6H14V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V4Z" 
+                stroke="currentColor" 
+                strokeWidth="1.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            Nova Pasta
+          </button>
+        )}
 
         <div className="color-picker">
           {colors.map(color => (
@@ -46,6 +95,26 @@ function Toolbar({
             />
           ))}
         </div>
+
+        {selectedNotesCount > 0 && onMoveSelectedToFolder && folders.length > 0 && (
+          <div className="move-to-folder-menu">
+            <select 
+              className="folder-select"
+              onChange={(e) => {
+                const folderId = e.target.value === 'master' ? null : e.target.value
+                onMoveSelectedToFolder(folderId)
+                e.target.value = ''
+              }}
+              defaultValue=""
+            >
+              <option value="" disabled>Mover para pasta...</option>
+              <option value="master">Master Workflow</option>
+              {folders.map(folder => (
+                <option key={folder.id} value={folder.id}>{folder.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {noteCount > 0 && (
           <button className="toolbar-btn danger" onClick={onClearAll}>
@@ -64,14 +133,42 @@ function Toolbar({
       </div>
 
       <div className="toolbar-section toolbar-info">
+        {folders.length > 0 && !currentFolderId && (
+          <div className="folders-list">
+            {folders.map(folder => (
+              <button
+                key={folder.id}
+                className="folder-btn-nav"
+                onClick={() => onNavigateToFolder?.(folder.id)}
+                title={`Abrir pasta: ${folder.name}`}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" style={{ marginRight: '4px' }}>
+                  <path d="M2 4H6L8 6H14V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V4Z" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                </svg>
+                {folder.name}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="info-badge">
           Zoom: {Math.round(zoom * 100)}%
         </div>
         <div className="info-badge">
           Notas: {noteCount}
         </div>
+        {selectedNotesCount > 0 && (
+          <div className="info-badge selected-count">
+            Selecionadas: {selectedNotesCount}
+          </div>
+        )}
         <div className="hint">
-          Ctrl + Scroll: Zoom • Ctrl + Drag: Mover
+          Ctrl + Scroll: Zoom • Ctrl + Drag: Mover • Shift + Click: Selecionar
         </div>
       </div>
     </div>

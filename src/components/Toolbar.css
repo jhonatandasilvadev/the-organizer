@@ -138,6 +138,100 @@
   white-space: nowrap;
 }
 
+.back-btn {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-primary);
+}
+
+.back-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.folder-breadcrumb {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 6px;
+  margin-left: 8px;
+}
+
+.folder-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.folder-btn {
+  background: rgba(52, 199, 89, 0.1);
+  color: #34c759;
+}
+
+.folder-btn:hover {
+  background: rgba(52, 199, 89, 0.15);
+}
+
+.folders-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-right: 8px;
+}
+
+.folder-btn-nav {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.folder-btn-nav:hover {
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  transform: translateY(-1px);
+}
+
+.move-to-folder-menu {
+  display: flex;
+  align-items: center;
+}
+
+.folder-select {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.folder-select:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.folder-select:focus {
+  outline: none;
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.info-badge.selected-count {
+  background: rgba(0, 122, 255, 0.15);
+  color: #007aff;
+  font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 968px) {
   .toolbar {

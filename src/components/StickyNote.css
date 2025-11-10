@@ -34,6 +34,23 @@
   transform: scale(1.02);
 }
 
+.sticky-note.selected {
+  box-shadow: 
+    0 8px 32px var(--shadow),
+    0 0 0 3px #007aff,
+    0 0 0 1px var(--glass-border) inset,
+    0 1px 2px rgba(255, 255, 255, 0.1) inset;
+}
+
+.sticky-note.selected.dragging,
+.sticky-note.selected.resizing {
+  box-shadow: 
+    0 16px 64px var(--shadow-strong),
+    0 0 0 3px #007aff,
+    0 0 0 1.5px var(--glass-border) inset,
+    0 1px 2px rgba(255, 255, 255, 0.2) inset;
+}
+
 .note-header {
   display: flex;
   justify-content: flex-start;

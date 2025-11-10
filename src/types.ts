@@ -8,6 +8,13 @@ export interface Note {
   content: string;
   color: string;
   zIndex: number;
+  folderId?: string | null; // ID da pasta que contém a nota (null = master workflow)
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  createdAt: number;
 }
 
 export interface Position {
