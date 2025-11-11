@@ -3,7 +3,7 @@
   border-radius: 16px;
   backdrop-filter: blur(60px) saturate(180%);
   -webkit-backdrop-filter: blur(60px) saturate(180%);
-  box-shadow: 
+  box-shadow:
     0 8px 32px var(--shadow),
     0 0 0 1px var(--glass-border) inset,
     0 1px 2px rgba(255, 255, 255, 0.1) inset;
@@ -17,7 +17,7 @@
 }
 
 .sticky-note:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 48px var(--shadow-hover),
     0 0 0 1px var(--glass-border) inset,
     0 1px 2px rgba(255, 255, 255, 0.2) inset;
@@ -26,7 +26,7 @@
 
 .sticky-note.dragging,
 .sticky-note.resizing {
-  box-shadow: 
+  box-shadow:
     0 16px 64px var(--shadow-strong),
     0 0 0 1.5px var(--glass-border) inset,
     0 1px 2px rgba(255, 255, 255, 0.2) inset;
@@ -35,7 +35,7 @@
 }
 
 .sticky-note.selected {
-  box-shadow: 
+  box-shadow:
     0 8px 32px var(--shadow),
     0 0 0 3px #007aff,
     0 0 0 1px var(--glass-border) inset,
@@ -44,7 +44,7 @@
 
 .sticky-note.selected.dragging,
 .sticky-note.selected.resizing {
-  box-shadow: 
+  box-shadow:
     0 16px 64px var(--shadow-strong),
     0 0 0 3px #007aff,
     0 0 0 1.5px var(--glass-border) inset,
@@ -60,7 +60,7 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-[data-theme="dark"] .note-header {
+[data-theme='dark'] .note-header {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -101,7 +101,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 6px 18px rgba(255, 59, 48, 0.45),
     0 0 0 4px var(--bg-primary);
   cursor: pointer;
@@ -123,7 +123,7 @@
 .delete-btn-floating:hover {
   background: #ff453a;
   transform: scale(1.08);
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(255, 59, 48, 0.5),
     0 0 0 4px var(--bg-primary);
 }
@@ -221,4 +221,3 @@
   width: 8px;
   cursor: ew-resize;
 }
-

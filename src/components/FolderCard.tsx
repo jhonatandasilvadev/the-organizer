@@ -58,33 +58,39 @@ function FolderCard({
     }
   }, [editing])
 
-  const snapToGrid = useCallback((value: number) => Math.round(value / gridSize) * gridSize, [gridSize])
+  const snapToGrid = useCallback(
+    (value: number) => Math.round(value / gridSize) * gridSize,
+    [gridSize],
+  )
 
-  const handleMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (editing) return
-    if (event.button !== 0) return
+  const handleMouseDown = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (editing) return
+      if (event.button !== 0) return
 
-    const target = event.target as HTMLElement
-    if (target.closest('.folder-card-rename')) {
-      return
-    }
+      const target = event.target as HTMLElement
+      if (target.closest('.folder-card-rename')) {
+        return
+      }
 
-    const canvasRect = canvasRef?.current?.getBoundingClientRect()
-    if (!canvasRect) return
+      const canvasRect = canvasRef?.current?.getBoundingClientRect()
+      if (!canvasRect) return
 
-    event.preventDefault()
-    setIsDragging(true)
-    draggedRef.current = false
+      event.preventDefault()
+      setIsDragging(true)
+      draggedRef.current = false
 
-    const mouseCanvasX = (event.clientX - canvasRect.left - pan.x) / zoom
-    const mouseCanvasY = (event.clientY - canvasRect.top - pan.y) / zoom
+      const mouseCanvasX = (event.clientX - canvasRect.left - pan.x) / zoom
+      const mouseCanvasY = (event.clientY - canvasRect.top - pan.y) / zoom
 
-    setDragStart({
-      x: mouseCanvasX - folder.x,
-      y: mouseCanvasY - folder.y,
-    })
-    setTempPosition(null)
-  }, [editing, canvasRef, pan, zoom, folder.x, folder.y])
+      setDragStart({
+        x: mouseCanvasX - folder.x,
+        y: mouseCanvasY - folder.y,
+      })
+      setTempPosition(null)
+    },
+    [editing, canvasRef, pan, zoom, folder.x, folder.y],
+  )
 
   useEffect(() => {
     if (!isDragging) return
@@ -244,9 +250,7 @@ function FolderCard({
           ) : (
             <span className="folder-card-title">{folder.name}</span>
           )}
-          {hintLabel && (
-            <span className="folder-card-hint">{hintLabel}</span>
-          )}
+          {hintLabel && <span className="folder-card-hint">{hintLabel}</span>}
         </div>
       </div>
     </div>

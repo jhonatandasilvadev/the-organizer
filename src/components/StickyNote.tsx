@@ -22,11 +22,11 @@ interface StickyNoteProps {
 
 type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw' | 'n' | 's' | 'e' | 'w' | null
 
-function StickyNote({ 
-  note, 
-  onUpdate, 
-  onDelete, 
-  onBringToFront, 
+function StickyNote({
+  note,
+  onUpdate,
+  onDelete,
+  onBringToFront,
   gridSize,
   isSelected = false,
   onSelect,
@@ -48,76 +48,96 @@ function StickyNote({
   const noteRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize
+  const snapToGrid = useCallback(
+    (value: number) => Math.round(value / gridSize) * gridSize,
+    [gridSize],
+  )
 
   const titleRef = useRef<HTMLInputElement>(null)
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.target === textareaRef.current || e.target === titleRef.current) {
-      // Se clicou no texto, apenas seleciona se Shift estiver pressionado
-      if (e.shiftKey && onSelect) {
-        e.preventDefault()
-        e.stopPropagation()
-        onSelect(note.id, true)
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === textareaRef.current || e.target === titleRef.current) {
+        // Se clicou no texto, apenas seleciona se Shift estiver pressionado
+        if (e.shiftKey && onSelect) {
+          e.preventDefault()
+          e.stopPropagation()
+          onSelect(note.id, true)
+        }
+        return
       }
-      return
-    }
-    
-    e.preventDefault()
-    e.stopPropagation()
-    
-    // Se Shift está pressionado, apenas seleciona
-    if (e.shiftKey && onSelect) {
-      onSelect(note.id, true)
-      return
-    }
-    
-    // Seleciona a nota se houver callback de seleção
-    if (onSelect && !isSelected) {
-      onSelect(note.id, false)
-    }
-    
-    onBringToFront(note.id)
-    setIsDragging(true)
 
-    // Notifica o início do arraste em grupo
-    onGroupDragStart?.(note.id)
+      e.preventDefault()
+      e.stopPropagation()
 
-    const canvasRect = canvasRef?.current?.getBoundingClientRect()
-    if (canvasRect) {
-      // Coordenada do mouse no espaço do canvas
-      const mouseCanvasX = (e.clientX - canvasRect.left - pan.x) / zoom
-      const mouseCanvasY = (e.clientY - canvasRect.top - pan.y) / zoom
-      
-      setDragStart({
-        x: mouseCanvasX - note.x,
-        y: mouseCanvasY - note.y,
+      // Se Shift está pressionado, apenas seleciona
+      if (e.shiftKey && onSelect) {
+        onSelect(note.id, true)
+        return
+      }
+
+      // Seleciona a nota se houver callback de seleção
+      if (onSelect && !isSelected) {
+        onSelect(note.id, false)
+      }
+
+      onBringToFront(note.id)
+      setIsDragging(true)
+
+      // Notifica o início do arraste em grupo
+      onGroupDragStart?.(note.id)
+
+      const canvasRect = canvasRef?.current?.getBoundingClientRect()
+      if (canvasRect) {
+        // Coordenada do mouse no espaço do canvas
+        const mouseCanvasX = (e.clientX - canvasRect.left - pan.x) / zoom
+        const mouseCanvasY = (e.clientY - canvasRect.top - pan.y) / zoom
+
+        setDragStart({
+          x: mouseCanvasX - note.x,
+          y: mouseCanvasY - note.y,
+        })
+      } else {
+        // Fallback se não houver canvasRef
+        setDragStart({
+          x: e.clientX - note.x,
+          y: e.clientY - note.y,
+        })
+      }
+      // Limpa posição temporária ao iniciar novo arraste
+      setTempPosition(null)
+    },
+    [
+      note.id,
+      note.x,
+      note.y,
+      onBringToFront,
+      onSelect,
+      isSelected,
+      zoom,
+      pan,
+      canvasRef,
+      onGroupDragStart,
+    ],
+  )
+
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent, handle: ResizeHandle) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      onBringToFront(note.id)
+      setIsResizing(true)
+      setResizeHandle(handle)
+      setResizeStart({
+        x: e.clientX,
+        y: e.clientY,
+        width: note.width,
+        height: note.height,
       })
-    } else {
-      // Fallback se não houver canvasRef
-      setDragStart({
-        x: e.clientX - note.x,
-        y: e.clientY - note.y,
-      })
-    }
-    // Limpa posição temporária ao iniciar novo arraste
-    setTempPosition(null)
-  }, [note.id, note.x, note.y, onBringToFront, onSelect, isSelected, zoom, pan, canvasRef, onGroupDragStart])
-
-  const handleResizeStart = useCallback((e: React.MouseEvent, handle: ResizeHandle) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    onBringToFront(note.id)
-    setIsResizing(true)
-    setResizeHandle(handle)
-    setResizeStart({
-      x: e.clientX,
-      y: e.clientY,
-      width: note.width,
-      height: note.height,
-    })
-  }, [note.id, note.width, note.height, onBringToFront])
+    },
+    [note.id, note.width, note.height, onBringToFront],
+  )
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -127,7 +147,7 @@ function StickyNote({
         if (canvasRect) {
           const mouseCanvasX = (e.clientX - canvasRect.left - pan.x) / zoom
           const mouseCanvasY = (e.clientY - canvasRect.top - pan.y) / zoom
-          
+
           if (smoothMovement) {
             // Movimento suave: atualiza posição temporária sem snap
             const newX = mouseCanvasX - dragStart.x
@@ -209,13 +229,30 @@ function StickyNote({
     if (isDragging || isResizing) {
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
-      
+
       return () => {
         window.removeEventListener('mousemove', handleMouseMove)
         window.removeEventListener('mouseup', handleMouseUp)
       }
     }
-  }, [isDragging, isResizing, dragStart, resizeStart, resizeHandle, note, onUpdate, snapToGrid, gridSize, smoothMovement, tempPosition, zoom, pan, canvasRef, onGroupDrag, onGroupDragEnd])
+  }, [
+    isDragging,
+    isResizing,
+    dragStart,
+    resizeStart,
+    resizeHandle,
+    note,
+    onUpdate,
+    snapToGrid,
+    gridSize,
+    smoothMovement,
+    tempPosition,
+    zoom,
+    pan,
+    canvasRef,
+    onGroupDrag,
+    onGroupDragEnd,
+  ])
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate(note.id, { title: e.target.value })
@@ -227,11 +264,11 @@ function StickyNote({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
-    
-    const confirmMessage = note.title 
+
+    const confirmMessage = note.title
       ? `Tem certeza que deseja excluir "${note.title}"?`
       : 'Tem certeza que deseja excluir esta nota?'
-    
+
     if (window.confirm(confirmMessage)) {
       onDelete(note.id)
     }
@@ -272,25 +309,21 @@ function StickyNote({
           spellCheck={false}
         />
       </div>
-      
+
       {/* Botão flutuante de delete */}
-      <button 
-        className="delete-btn-floating" 
-        onClick={handleDelete}
-        title="Excluir nota"
-      >
+      <button className="delete-btn-floating" onClick={handleDelete} title="Excluir nota">
         <svg width="16" height="16" viewBox="0 0 16 16">
-          <path 
-            d="M2 4H14M5 4V3C5 2.44772 5.44772 2 6 2H10C10.5523 2 11 2.44772 11 3V4M6 7V11M10 7V11M4 4H12V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4Z" 
-            stroke="currentColor" 
-            strokeWidth="1.5" 
-            strokeLinecap="round" 
+          <path
+            d="M2 4H14M5 4V3C5 2.44772 5.44772 2 6 2H10C10.5523 2 11 2.44772 11 3V4M6 7V11M10 7V11M4 4H12V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
             strokeLinejoin="round"
             fill="none"
           />
         </svg>
       </button>
-      
+
       <textarea
         ref={textareaRef}
         className={placeholderClass}
@@ -315,4 +348,3 @@ function StickyNote({
 }
 
 export default StickyNote
-

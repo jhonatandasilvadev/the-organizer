@@ -71,58 +71,67 @@ function Canvas({
         e.preventDefault()
         const delta = -e.deltaY * 0.001
         const newZoom = Math.min(Math.max(zoom + delta, 0.25), 3)
-        
+
         // Zoom em direção ao cursor
         const rect = canvasRef.current!.getBoundingClientRect()
         const mouseX = e.clientX - rect.left
         const mouseY = e.clientY - rect.top
-        
+
         const worldX = (mouseX - pan.x) / zoom
         const worldY = (mouseY - pan.y) / zoom
-        
+
         const newPanX = mouseX - worldX * newZoom
         const newPanY = mouseY - worldY * newZoom
-        
+
         setZoom(newZoom)
         setPan({ x: newPanX, y: newPanY })
       }
     },
-    [zoom, pan, setZoom, setPan]
+    [zoom, pan, setZoom, setPan],
   )
 
   // Pan com Ctrl + Drag
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.ctrlKey && e.button === 0) {
-      e.preventDefault()
-      setIsPanning(true)
-      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
-      return
-    }
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.ctrlKey && e.button === 0) {
+        e.preventDefault()
+        setIsPanning(true)
+        setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+        return
+      }
 
-    if (e.button === 0) {
-      const target = e.target as HTMLElement
-      if (target === canvasRef.current || target.classList.contains('grid')) {
+      if (e.button === 0) {
+        const target = e.target as HTMLElement
+        if (target === canvasRef.current || target.classList.contains('grid')) {
+          onClearSelection?.()
+        }
+      }
+    },
+    [pan, onClearSelection],
+  )
+
+  const handleBackgroundMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (isPanning) return
+      if (e.ctrlKey) return
+      if (e.target === contentRef.current) {
         onClearSelection?.()
       }
-    }
-  }, [pan, onClearSelection])
+    },
+    [onClearSelection, isPanning],
+  )
 
-  const handleBackgroundMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (isPanning) return
-    if (e.ctrlKey) return
-    if (e.target === contentRef.current) {
-      onClearSelection?.()
-    }
-  }, [onClearSelection, isPanning])
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (isPanning) {
-      setPan({
-        x: e.clientX - panStart.x,
-        y: e.clientY - panStart.y,
-      })
-    }
-  }, [isPanning, panStart, setPan])
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isPanning) {
+        setPan({
+          x: e.clientX - panStart.x,
+          y: e.clientY - panStart.y,
+        })
+      }
+    },
+    [isPanning, panStart, setPan],
+  )
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false)
@@ -133,7 +142,7 @@ function Canvas({
     if (!canvas) return
 
     canvas.addEventListener('wheel', handleWheel, { passive: false })
-    
+
     return () => {
       canvas.removeEventListener('wheel', handleWheel)
     }
@@ -143,7 +152,7 @@ function Canvas({
     if (isPanning) {
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
-      
+
       return () => {
         window.removeEventListener('mousemove', handleMouseMove)
         window.removeEventListener('mouseup', handleMouseUp)
@@ -188,26 +197,27 @@ function Canvas({
         }}
         onMouseDown={handleBackgroundMouseDown}
       >
-        {currentFolderId === null && folders.map(folder => (
-          <FolderCard
-            key={folder.id}
-            folder={folder}
-            isActive={editingFolderId === folder.id}
-            isEditing={editingFolderId === folder.id}
-            selectedNotesCount={selectedNotes.size}
-            onOpen={(id) => onOpenFolder?.(id)}
-            onMoveSelected={(id) => onMoveSelectedToFolder?.(id)}
-            onRename={(id, name) => onRenameFolder?.(id, name)}
-            onRequestEdit={(id) => onRequestEditFolder?.(id)}
-            onDelete={() => onDeleteFolder?.(folder.id)}
-            onUpdatePosition={(position) => onUpdateFolderPosition?.(folder.id, position)}
-            gridSize={gridSize}
-            zoom={zoom}
-            pan={pan}
-            canvasRef={canvasRef}
-          />
-        ))}
-        {notes.map(note => (
+        {currentFolderId === null &&
+          folders.map((folder) => (
+            <FolderCard
+              key={folder.id}
+              folder={folder}
+              isActive={editingFolderId === folder.id}
+              isEditing={editingFolderId === folder.id}
+              selectedNotesCount={selectedNotes.size}
+              onOpen={(id) => onOpenFolder?.(id)}
+              onMoveSelected={(id) => onMoveSelectedToFolder?.(id)}
+              onRename={(id, name) => onRenameFolder?.(id, name)}
+              onRequestEdit={(id) => onRequestEditFolder?.(id)}
+              onDelete={() => onDeleteFolder?.(folder.id)}
+              onUpdatePosition={(position) => onUpdateFolderPosition?.(folder.id, position)}
+              gridSize={gridSize}
+              zoom={zoom}
+              pan={pan}
+              canvasRef={canvasRef}
+            />
+          ))}
+        {notes.map((note) => (
           <StickyNote
             key={note.id}
             note={note}
@@ -233,4 +243,3 @@ function Canvas({
 }
 
 export default Canvas
-

@@ -44,13 +44,20 @@ function Toolbar({
       <div className="toolbar-section">
         <h1 className="toolbar-title">The Organizer</h1>
         {currentFolderId && (
-          <button 
-            className="toolbar-btn back-btn" 
+          <button
+            className="toolbar-btn back-btn"
             onClick={onNavigateToMaster}
             title="Voltar para Master Workflow"
           >
             <svg width="16" height="16" viewBox="0 0 16 16">
-              <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path
+                d="M10 12L6 8L10 4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
             </svg>
             Voltar
           </button>
@@ -66,7 +73,7 @@ function Toolbar({
       <div className="toolbar-section toolbar-center">
         <button className="toolbar-btn primary" onClick={onAddNote}>
           <svg width="16" height="16" viewBox="0 0 16 16">
-            <path d="M8 2V14M2 8H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M8 2V14M2 8H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
           Nova Nota
         </button>
@@ -74,10 +81,11 @@ function Toolbar({
         {!currentFolderId && onCreateFolder && (
           <button className="toolbar-btn folder-btn" onClick={onCreateFolder} title="Criar Pasta">
             <svg width="16" height="16" viewBox="0 0 16 16">
-              <path d="M2 4H6L8 6H14V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V4Z" 
-                stroke="currentColor" 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
+              <path
+                d="M2 4H6L8 6H14V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V4Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="none"
               />
@@ -87,7 +95,7 @@ function Toolbar({
         )}
 
         <div className="color-picker">
-          {colors.map(color => (
+          {colors.map((color) => (
             <button
               key={color}
               className={`color-btn ${selectedColor === color ? 'active' : ''}`}
@@ -138,10 +146,14 @@ function Toolbar({
                   }}
                   defaultValue=""
                 >
-                  <option value="" disabled>Mover para pasta...</option>
+                  <option value="" disabled>
+                    Mover para pasta...
+                  </option>
                   <option value="master">Master Workflow</option>
-                  {folders.map(folder => (
-                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  {folders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -152,10 +164,11 @@ function Toolbar({
         {noteCount > 0 && (
           <button className="toolbar-btn danger" onClick={onClearAll}>
             <svg width="16" height="16" viewBox="0 0 16 16">
-              <path d="M3 4H13M5 4V3C5 2.44772 5.44772 2 6 2H10C10.5523 2 11 2.44772 11 3V4M6 7V11M10 7V11M4 4H12V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4Z" 
-                stroke="currentColor" 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
+              <path
+                d="M3 4H13M5 4V3C5 2.44772 5.44772 2 6 2H10C10.5523 2 11 2.44772 11 3V4M6 7V11M10 7V11M4 4H12V13C12 13.5523 11.5523 14 11 14H5C4.44772 14 4 13.5523 4 13V4Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
                 strokeLinejoin="round"
                 fill="none"
               />
@@ -168,7 +181,7 @@ function Toolbar({
       <div className="toolbar-section toolbar-info">
         {folders.length > 0 && !currentFolderId && (
           <div className="folders-list">
-            {folders.map(folder => (
+            {folders.map((folder) => (
               <button
                 key={folder.id}
                 className="folder-btn-nav"
@@ -176,10 +189,11 @@ function Toolbar({
                 title={`Abrir pasta: ${folder.name}`}
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" style={{ marginRight: '4px' }}>
-                  <path d="M2 4H6L8 6H14V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V4Z" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5" 
-                    strokeLinecap="round" 
+                  <path
+                    d="M2 4H6L8 6H14V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V4Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
                     strokeLinejoin="round"
                     fill="none"
                   />
@@ -189,16 +203,10 @@ function Toolbar({
             ))}
           </div>
         )}
-        <div className="info-badge">
-          Zoom: {Math.round(zoom * 100)}%
-        </div>
-        <div className="info-badge">
-          Notas: {noteCount}
-        </div>
+        <div className="info-badge">Zoom: {Math.round(zoom * 100)}%</div>
+        <div className="info-badge">Notas: {noteCount}</div>
         {selectedNotesCount > 0 && (
-          <div className="info-badge selected-count">
-            Selecionadas: {selectedNotesCount}
-          </div>
+          <div className="info-badge selected-count">Selecionadas: {selectedNotesCount}</div>
         )}
         <div className="hint">
           Ctrl + Scroll: Zoom • Ctrl + Drag: Mover • Shift + Click: Selecionar
@@ -209,4 +217,3 @@ function Toolbar({
 }
 
 export default Toolbar
-

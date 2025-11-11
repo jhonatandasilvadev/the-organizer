@@ -6,7 +6,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   border-radius: 18px;
 }
 
@@ -86,26 +88,26 @@
   background: rgba(255, 69, 58, 0.3);
 }
 
-[data-theme="light"] .folder-card-rename,
-[data-theme="light"] .folder-card-delete {
+[data-theme='light'] .folder-card-rename,
+[data-theme='light'] .folder-card-delete {
   background: rgba(15, 23, 42, 0.08);
   color: rgba(15, 23, 42, 0.75);
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.16);
 }
 
-[data-theme="light"] .folder-card-delete {
+[data-theme='light'] .folder-card-delete {
   background: rgba(255, 69, 58, 0.14);
   color: #cf2d1f;
   box-shadow: inset 0 0 0 1px rgba(255, 69, 58, 0.3);
 }
 
-[data-theme="light"] .folder-card-rename:hover,
-[data-theme="light"] .folder-card-delete:hover {
+[data-theme='light'] .folder-card-rename:hover,
+[data-theme='light'] .folder-card-delete:hover {
   background: rgba(0, 122, 255, 0.1);
   color: rgba(0, 122, 255, 0.9);
 }
 
-[data-theme="light"] .folder-card-body {
+[data-theme='light'] .folder-card-body {
   background: rgba(255, 255, 255, 0.72);
   box-shadow:
     0 8px 24px rgba(15, 23, 42, 0.16),
@@ -182,7 +184,7 @@
   pointer-events: none;
 }
 
-[data-theme="light"] .folder-card-title {
+[data-theme='light'] .folder-card-title {
   background: rgba(15, 23, 42, 0.06);
   color: rgba(15, 23, 42, 0.82);
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
@@ -210,7 +212,7 @@
     0 0 0 4px rgba(0, 122, 255, 0.1);
 }
 
-[data-theme="light"] .folder-card-input {
+[data-theme='light'] .folder-card-input {
   background: rgba(15, 23, 42, 0.06);
   color: rgba(15, 23, 42, 0.9);
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
@@ -224,7 +226,7 @@
   letter-spacing: 0.4px;
 }
 
-[data-theme="light"] .folder-card-hint {
+[data-theme='light'] .folder-card-hint {
   color: rgba(0, 122, 255, 0.75);
 }
 

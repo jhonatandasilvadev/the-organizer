@@ -257,17 +257,16 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .toolbar-section {
     justify-content: center;
   }
-  
+
   .toolbar-center {
     flex-wrap: wrap;
   }
-  
+
   .hint {
     display: none;
   }
 }
-

@@ -15,7 +15,7 @@
   --note-delete-bg: rgba(0, 0, 0, 0.1);
   --note-delete-color: rgba(0, 0, 0, 0.5);
   --glass-border: rgba(248, 249, 250, 0.3);
-  
+
   /* Accent Colors */
   --accent-black: #1d1d1f;
   --accent-green: #34c759;
@@ -23,7 +23,7 @@
   --accent-blue: #007aff;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Dark Theme */
   --bg-primary: #000000;
   --bg-secondary: #1c1c1e;
@@ -40,7 +40,7 @@
   --note-delete-bg: rgba(255, 255, 255, 0.15);
   --note-delete-color: rgba(255, 255, 255, 0.6);
   --glass-border: rgba(255, 255, 255, 0.15);
-  
+
   /* Accent Colors ajustados para dark */
   --accent-black: #2c2c2e;
   --accent-green: #30d158;
@@ -55,13 +55,16 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   background: var(--bg-primary);
   color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 #root {
@@ -77,7 +80,8 @@ button {
   outline: none;
 }
 
-input, textarea {
+input,
+textarea {
   font-family: inherit;
   border: none;
   outline: none;
@@ -106,4 +110,3 @@ input, textarea {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
-

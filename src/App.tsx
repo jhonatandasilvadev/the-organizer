@@ -35,7 +35,7 @@ const computeFolderPosition = (index: number) => {
 
 const generateFolderName = (existingFolders: Folder[]) => {
   const baseName = 'Nova Pasta'
-  const existing = new Set(existingFolders.map(folder => folder.name.toLowerCase()))
+  const existing = new Set(existingFolders.map((folder) => folder.name.toLowerCase()))
 
   if (!existing.has(baseName.toLowerCase())) {
     return baseName
@@ -53,6 +53,30 @@ const generateFolderName = (existingFolders: Folder[]) => {
   return `${baseName} ${Date.now()}`
 }
 
+type StoredNotesPayload = {
+  notes?: Note[]
+  nextZIndex?: number
+}
+
+type StoredFoldersPayload = Folder[]
+
+const isStoredNotesPayload = (value: unknown): value is StoredNotesPayload => {
+  if (typeof value !== 'object' || value === null) return false
+  const payload = value as Record<string, unknown>
+  const { notes, nextZIndex } = payload
+
+  const notesValid =
+    notes === undefined ||
+    (Array.isArray(notes) && notes.every((item) => typeof item === 'object' && item !== null))
+  const zIndexValid = nextZIndex === undefined || typeof nextZIndex === 'number'
+
+  return notesValid && zIndexValid
+}
+
+const isStoredFoldersPayload = (value: unknown): value is StoredFoldersPayload => {
+  return Array.isArray(value)
+}
+
 function App() {
   const [notes, setNotes] = useState<Note[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
@@ -62,8 +86,13 @@ function App() {
   const [selectedColor, setSelectedColor] = useState(COLORS[0])
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [previewPositions, setPreviewPositions] = useState<Record<string, { x: number; y: number }>>({})
-  const dragGroupRef = useRef<{ anchorId: string | null; originals: Record<string, { x: number; y: number }> }>({ anchorId: null, originals: {} })
+  const [previewPositions, setPreviewPositions] = useState<
+    Record<string, { x: number; y: number }>
+  >({})
+  const dragGroupRef = useRef<{
+    anchorId: string | null
+    originals: Record<string, { x: number; y: number }>
+  }>({ anchorId: null, originals: {} })
   const nextZIndexRef = useRef(1)
   const snapToGrid = useCallback((value: number) => Math.round(value / GRID_SIZE) * GRID_SIZE, [])
 
@@ -71,29 +100,37 @@ function App() {
   useEffect(() => {
     const savedNotes = localStorage.getItem(STORAGE_KEY)
     const savedFolders = localStorage.getItem(STORAGE_FOLDERS_KEY)
-    
+
     if (savedNotes) {
       try {
-        const data = JSON.parse(savedNotes)
-        setNotes(data.notes || [])
-        nextZIndexRef.current = data.nextZIndex || 1
+        const parsedNotes: unknown = JSON.parse(savedNotes)
+        if (isStoredNotesPayload(parsedNotes)) {
+          if (parsedNotes.notes) {
+            setNotes(parsedNotes.notes)
+          }
+          if (typeof parsedNotes.nextZIndex === 'number') {
+            nextZIndexRef.current = parsedNotes.nextZIndex
+          }
+        }
       } catch (e) {
         console.error('Erro ao carregar notas:', e)
       }
     }
-    
+
     if (savedFolders) {
       try {
-        const foldersData: Folder[] = JSON.parse(savedFolders)
-        const normalized = (foldersData || []).map((folder, index) => {
-          const position = computeFolderPosition(index)
-          return {
-            ...folder,
-            x: typeof folder.x === 'number' ? folder.x : position.x,
-            y: typeof folder.y === 'number' ? folder.y : position.y,
-          }
-        })
-        setFolders(normalized)
+        const parsedFolders: unknown = JSON.parse(savedFolders)
+        if (isStoredFoldersPayload(parsedFolders)) {
+          const normalized = parsedFolders.map((folder, index) => {
+            const position = computeFolderPosition(index)
+            return {
+              ...folder,
+              x: typeof folder.x === 'number' ? folder.x : position.x,
+              y: typeof folder.y === 'number' ? folder.y : position.y,
+            }
+          })
+          setFolders(normalized)
+        }
       } catch (e) {
         console.error('Erro ao carregar pastas:', e)
       }
@@ -103,10 +140,13 @@ function App() {
   // Salvar notas no localStorage
   useEffect(() => {
     if (notes.length > 0 || localStorage.getItem(STORAGE_KEY)) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        notes,
-        nextZIndex: nextZIndexRef.current
-      }))
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          notes,
+          nextZIndex: nextZIndexRef.current,
+        }),
+      )
     }
   }, [notes])
 
@@ -118,7 +158,7 @@ function App() {
   }, [folders])
 
   // Filtrar notas baseado na pasta atual
-  const currentNotes = notes.filter(note => {
+  const currentNotes = notes.filter((note) => {
     if (currentFolderId === null) {
       // Master workflow: mostra apenas notas sem pasta
       return !note.folderId
@@ -132,7 +172,7 @@ function App() {
     // Se estiver dentro de uma pasta, organiza as notas lado a lado
     let newX: number
     let newY: number
-    
+
     if (currentFolderId !== null) {
       // Organização lado a lado dentro da pasta
       const notesInFolder = currentNotes.length
@@ -140,7 +180,7 @@ function App() {
       const noteWidth = 240
       const startX = 50
       const startY = 100
-      newX = startX + (notesInFolder * (noteWidth + spacing))
+      newX = startX + notesInFolder * (noteWidth + spacing)
       newY = startY
     } else {
       // Master workflow: centro da tela
@@ -160,36 +200,39 @@ function App() {
       zIndex: nextZIndexRef.current++,
       folderId: currentFolderId,
     }
-    setNotes(prev => [...prev, newNote])
+    setNotes((prev) => [...prev, newNote])
   }, [selectedColor, zoom, pan, currentFolderId, currentNotes])
 
   const updateNote = useCallback((id: string, updates: Partial<Note>) => {
-    setNotes(prev => prev.map(note => 
-      note.id === id ? { ...note, ...updates } : note
-    ))
+    setNotes((prev) => prev.map((note) => (note.id === id ? { ...note, ...updates } : note)))
   }, [])
 
   const deleteNote = useCallback((id: string) => {
-    setNotes(prev => prev.filter(note => note.id !== id))
+    setNotes((prev) => prev.filter((note) => note.id !== id))
   }, [])
 
-  const bringToFront = useCallback((id: string) => {
-    const newZIndex = nextZIndexRef.current++
-    updateNote(id, { zIndex: newZIndex })
-  }, [updateNote])
+  const bringToFront = useCallback(
+    (id: string) => {
+      const newZIndex = nextZIndexRef.current++
+      updateNote(id, { zIndex: newZIndex })
+    },
+    [updateNote],
+  )
 
   const clearAll = useCallback(() => {
-    const message = currentFolderId 
+    const message = currentFolderId
       ? 'Tem certeza que deseja limpar todas as notas desta pasta?'
       : 'Tem certeza que deseja limpar todas as notas?'
-    
+
     if (window.confirm(message)) {
       if (currentFolderId) {
         // Remove apenas notas da pasta atual
-        setNotes(prev => prev.filter(note => note.folderId !== currentFolderId))
+        setNotes((prev) => prev.filter((note) => note.folderId !== currentFolderId))
       } else {
         // Remove apenas notas do master workflow
-        setNotes(prev => prev.filter(note => note.folderId !== null && note.folderId !== undefined))
+        setNotes((prev) =>
+          prev.filter((note) => note.folderId !== null && note.folderId !== undefined),
+        )
       }
     }
   }, [currentFolderId])
@@ -201,7 +244,7 @@ function App() {
     }
 
     const newFolderId = `folder-${Date.now()}`
-    setFolders(prev => {
+    setFolders((prev) => {
       const position = computeFolderPosition(prev.length)
       const newFolder: Folder = {
         id: newFolderId,
@@ -216,7 +259,9 @@ function App() {
   }, [currentFolderId])
 
   const renameFolder = useCallback((folderId: string, name: string) => {
-    setFolders(prev => prev.map(folder => folder.id === folderId ? { ...folder, name } : folder))
+    setFolders((prev) =>
+      prev.map((folder) => (folder.id === folderId ? { ...folder, name } : folder)),
+    )
     setEditingFolderId(null)
   }, [])
 
@@ -224,58 +269,68 @@ function App() {
     setEditingFolderId(folderId)
   }, [])
 
-  const updateFolderPosition = useCallback((folderId: string, position: { x: number; y: number }) => {
-    setFolders(prev => prev.map(folder => folder.id === folderId ? { ...folder, ...position } : folder))
-  }, [])
+  const updateFolderPosition = useCallback(
+    (folderId: string, position: { x: number; y: number }) => {
+      setFolders((prev) =>
+        prev.map((folder) => (folder.id === folderId ? { ...folder, ...position } : folder)),
+      )
+    },
+    [],
+  )
 
-  const deleteFolder = useCallback((folderId: string) => {
-    const affectedNotes = notes.filter(note => note.folderId === folderId).map(note => note.id)
+  const deleteFolder = useCallback(
+    (folderId: string) => {
+      const affectedNotes = notes
+        .filter((note) => note.folderId === folderId)
+        .map((note) => note.id)
 
-    setFolders(prev => prev.filter(folder => folder.id !== folderId))
+      setFolders((prev) => prev.filter((folder) => folder.id !== folderId))
 
-    if (affectedNotes.length > 0) {
-      setNotes(prev => prev.map(note => (
-        affectedNotes.includes(note.id)
-          ? { ...note, folderId: null }
-          : note
-      )))
+      if (affectedNotes.length > 0) {
+        setNotes((prev) =>
+          prev.map((note) =>
+            affectedNotes.includes(note.id) ? { ...note, folderId: null } : note,
+          ),
+        )
 
-      setSelectedNotes(prev => {
-        if (prev.size === 0) return prev
-        const next = new Set(prev)
-        let changed = false
-        affectedNotes.forEach(id => {
-          if (next.delete(id)) {
-            changed = true
-          }
+        setSelectedNotes((prev) => {
+          if (prev.size === 0) return prev
+          const next = new Set(prev)
+          let changed = false
+          affectedNotes.forEach((id) => {
+            if (next.delete(id)) {
+              changed = true
+            }
+          })
+          return changed ? next : prev
         })
-        return changed ? next : prev
-      })
 
-      setPreviewPositions(prev => {
-        if (!prev || Object.keys(prev).length === 0) return prev
-        const next = { ...prev }
-        let changed = false
-        affectedNotes.forEach(id => {
-          if (next[id]) {
-            delete next[id]
-            changed = true
-          }
+        setPreviewPositions((prev) => {
+          if (!prev || Object.keys(prev).length === 0) return prev
+          const next = { ...prev }
+          let changed = false
+          affectedNotes.forEach((id) => {
+            if (next[id]) {
+              delete next[id]
+              changed = true
+            }
+          })
+          return changed ? next : prev
         })
-        return changed ? next : prev
-      })
-    }
+      }
 
-    if (editingFolderId === folderId) {
-      setEditingFolderId(null)
-    }
+      if (editingFolderId === folderId) {
+        setEditingFolderId(null)
+      }
 
-    if (currentFolderId === folderId) {
-      setCurrentFolderId(null)
-      setPan({ x: 0, y: 0 })
-      setZoom(1)
-    }
-  }, [notes, currentFolderId, editingFolderId])
+      if (currentFolderId === folderId) {
+        setCurrentFolderId(null)
+        setPan({ x: 0, y: 0 })
+        setZoom(1)
+      }
+    },
+    [notes, currentFolderId, editingFolderId],
+  )
 
   // Navegar para uma pasta
   const navigateToFolder = useCallback((folderId: string | null) => {
@@ -294,7 +349,7 @@ function App() {
 
   // Selecionar nota
   const handleNoteSelect = useCallback((noteId: string, shiftKey: boolean) => {
-    setSelectedNotes(prev => {
+    setSelectedNotes((prev) => {
       const newSet = new Set(prev)
       if (shiftKey) {
         // Toggle seleção com Shift
@@ -318,25 +373,27 @@ function App() {
     dragGroupRef.current = { anchorId: null, originals: {} }
   }, [])
 
-  const beginGroupDrag = useCallback((noteId: string) => {
-    const activeIds = (selectedNotes.size > 0 && selectedNotes.has(noteId))
-      ? Array.from(selectedNotes)
-      : [noteId]
+  const beginGroupDrag = useCallback(
+    (noteId: string) => {
+      const activeIds =
+        selectedNotes.size > 0 && selectedNotes.has(noteId) ? Array.from(selectedNotes) : [noteId]
 
-    const originals: Record<string, { x: number; y: number }> = {}
-    for (const id of activeIds) {
-      const note = notes.find(n => n.id === id)
-      if (note) {
-        originals[id] = { x: note.x, y: note.y }
+      const originals: Record<string, { x: number; y: number }> = {}
+      for (const id of activeIds) {
+        const note = notes.find((n) => n.id === id)
+        if (note) {
+          originals[id] = { x: note.x, y: note.y }
+        }
       }
-    }
 
-    dragGroupRef.current = {
-      anchorId: noteId,
-      originals,
-    }
-    setPreviewPositions({})
-  }, [notes, selectedNotes])
+      dragGroupRef.current = {
+        anchorId: noteId,
+        originals,
+      }
+      setPreviewPositions({})
+    },
+    [notes, selectedNotes],
+  )
 
   const handleGroupDrag = useCallback((noteId: string, position: { x: number; y: number }) => {
     const { anchorId, originals } = dragGroupRef.current
@@ -359,33 +416,38 @@ function App() {
     setPreviewPositions(preview)
   }, [])
 
-  const endGroupDrag = useCallback((noteId: string, position: { x: number; y: number }) => {
-    const { anchorId, originals } = dragGroupRef.current
-    if (!originals[noteId]) {
-      updateNote(noteId, { x: position.x, y: position.y })
-      return
-    }
-
-    const referenceId = anchorId ?? noteId
-    const referenceOriginal = originals[referenceId]
-    const deltaX = position.x - (referenceOriginal?.x ?? position.x)
-    const deltaY = position.y - (referenceOriginal?.y ?? position.y)
-
-    setNotes(prev => prev.map(note => {
-      const origin = originals[note.id]
-      if (origin) {
-        return {
-          ...note,
-          x: snapToGrid(origin.x + deltaX),
-          y: snapToGrid(origin.y + deltaY),
-        }
+  const endGroupDrag = useCallback(
+    (noteId: string, position: { x: number; y: number }) => {
+      const { anchorId, originals } = dragGroupRef.current
+      if (!originals[noteId]) {
+        updateNote(noteId, { x: position.x, y: position.y })
+        return
       }
-      return note
-    }))
 
-    setPreviewPositions({})
-    dragGroupRef.current = { anchorId: null, originals: {} }
-  }, [snapToGrid, updateNote])
+      const referenceId = anchorId ?? noteId
+      const referenceOriginal = originals[referenceId]
+      const deltaX = position.x - (referenceOriginal?.x ?? position.x)
+      const deltaY = position.y - (referenceOriginal?.y ?? position.y)
+
+      setNotes((prev) =>
+        prev.map((note) => {
+          const origin = originals[note.id]
+          if (origin) {
+            return {
+              ...note,
+              x: snapToGrid(origin.x + deltaX),
+              y: snapToGrid(origin.y + deltaY),
+            }
+          }
+          return note
+        }),
+      )
+
+      setPreviewPositions({})
+      dragGroupRef.current = { anchorId: null, originals: {} }
+    },
+    [snapToGrid, updateNote],
+  )
 
   // Organizar notas dentro da pasta atual (lado a lado)
   const organizeNotesInFolder = useCallback((folderId: string | null) => {
@@ -396,20 +458,20 @@ function App() {
     const startX = 50
     const startY = 100
 
-    setNotes(prev => {
-      const folderNotes = prev.filter(note => note.folderId === folderId)
+    setNotes((prev) => {
+      const folderNotes = prev.filter((note) => note.folderId === folderId)
       if (folderNotes.length === 0) return prev
-      
+
       // Ordenar por ID para manter ordem consistente
       const sortedNotes = [...folderNotes].sort((a, b) => a.id.localeCompare(b.id))
-      
+
       return prev.map((note) => {
         if (note.folderId === folderId) {
-          const index = sortedNotes.findIndex(n => n.id === note.id)
+          const index = sortedNotes.findIndex((n) => n.id === note.id)
           if (index === -1) return note
           return {
             ...note,
-            x: startX + (index * (noteWidth + spacing)),
+            x: startX + index * (noteWidth + spacing),
             y: startY,
           }
         }
@@ -419,24 +481,29 @@ function App() {
   }, [])
 
   // Mover notas selecionadas para uma pasta
-  const moveSelectedNotesToFolder = useCallback((folderId: string | null) => {
-    if (selectedNotes.size === 0) return
+  const moveSelectedNotesToFolder = useCallback(
+    (folderId: string | null) => {
+      if (selectedNotes.size === 0) return
 
-    setNotes(prev => prev.map(note => {
-      if (selectedNotes.has(note.id)) {
-        return { ...note, folderId }
+      setNotes((prev) =>
+        prev.map((note) => {
+          if (selectedNotes.has(note.id)) {
+            return { ...note, folderId }
+          }
+          return note
+        }),
+      )
+      setSelectedNotes(new Set())
+
+      // Se moveu para uma pasta, organiza as notas
+      if (folderId !== null) {
+        setTimeout(() => {
+          organizeNotesInFolder(folderId)
+        }, 50)
       }
-      return note
-    }))
-    setSelectedNotes(new Set())
-    
-    // Se moveu para uma pasta, organiza as notas
-    if (folderId !== null) {
-      setTimeout(() => {
-        organizeNotesInFolder(folderId)
-      }, 50)
-    }
-  }, [selectedNotes, organizeNotesInFolder])
+    },
+    [selectedNotes, organizeNotesInFolder],
+  )
 
   // Organizar automaticamente quando entrar em uma pasta ou quando notas mudam
   useEffect(() => {
@@ -450,9 +517,7 @@ function App() {
   }, [currentFolderId, organizeNotesInFolder, currentNotes.length])
 
   // Obter nome da pasta atual
-  const currentFolder = currentFolderId 
-    ? folders.find(f => f.id === currentFolderId)
-    : null
+  const currentFolder = currentFolderId ? folders.find((f) => f.id === currentFolderId) : null
 
   return (
     <div className="app">
@@ -506,4 +571,3 @@ function App() {
 }
 
 export default App
-
