@@ -65,6 +65,13 @@ function Canvas({
   const contentRef = useRef<HTMLDivElement>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [selectionBox, setSelectionBox] = useState<{
+    startX: number
+    startY: number
+    endX: number
+    endY: number
+  } | null>(null)
 
   // Zoom com Ctrl + Scroll
   const handleWheel = useCallback(
@@ -92,7 +99,7 @@ function Canvas({
     [zoom, pan, setZoom, setPan],
   )
 
-  // Pan com Ctrl + Drag
+  // Pan com Ctrl + Drag ou Seleção por arraste
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.ctrlKey && e.button === 0) {
@@ -104,12 +111,39 @@ function Canvas({
 
       if (e.button === 0) {
         const target = e.target as HTMLElement
-        if (target === canvasRef.current || target.classList.contains('grid')) {
-          onClearSelection?.()
+        // Se clicou no canvas vazio (não em uma nota ou pasta), inicia seleção por arraste
+        if (
+          (target === canvasRef.current ||
+            target.classList.contains('grid') ||
+            target === contentRef.current) &&
+          !target.closest('.sticky-note') &&
+          !target.closest('.folder-card')
+        ) {
+          e.preventDefault()
+          const rect = canvasRef.current!.getBoundingClientRect()
+          const startX = e.clientX - rect.left
+          const startY = e.clientY - rect.top
+
+          // Converter para coordenadas do canvas (considerando zoom e pan)
+          const canvasStartX = (startX - pan.x) / zoom
+          const canvasStartY = (startY - pan.y) / zoom
+
+          setIsSelecting(true)
+          setSelectionBox({
+            startX: canvasStartX,
+            startY: canvasStartY,
+            endX: canvasStartX,
+            endY: canvasStartY,
+          })
+
+          // Se não estiver com Shift, limpa seleção atual
+          if (!e.shiftKey) {
+            onClearSelection?.()
+          }
         }
       }
     },
-    [pan, onClearSelection],
+    [pan, zoom, onClearSelection],
   )
 
   const handleBackgroundMouseDown = useCallback(
@@ -130,14 +164,69 @@ function Canvas({
           x: e.clientX - panStart.x,
           y: e.clientY - panStart.y,
         })
+      } else if (isSelecting && selectionBox && canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect()
+        const endX = e.clientX - rect.left
+        const endY = e.clientY - rect.top
+
+        // Converter para coordenadas do canvas
+        const canvasEndX = (endX - pan.x) / zoom
+        const canvasEndY = (endY - pan.y) / zoom
+
+        setSelectionBox({
+          ...selectionBox,
+          endX: canvasEndX,
+          endY: canvasEndY,
+        })
       }
     },
-    [isPanning, panStart, setPan],
+    [isPanning, panStart, setPan, isSelecting, selectionBox, zoom, pan],
   )
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false)
-  }, [])
+    if (isSelecting && selectionBox) {
+      // Detectar notas dentro da seleção final
+      const selectionRect = {
+        left: Math.min(selectionBox.startX, selectionBox.endX),
+        top: Math.min(selectionBox.startY, selectionBox.endY),
+        right: Math.max(selectionBox.startX, selectionBox.endX),
+        bottom: Math.max(selectionBox.startY, selectionBox.endY),
+      }
+
+      // Apenas seleciona se o retângulo tiver tamanho mínimo
+      const minSize = 10
+      if (
+        selectionRect.right - selectionRect.left > minSize &&
+        selectionRect.bottom - selectionRect.top > minSize
+      ) {
+        const notesInSelection = notes.filter((note) => {
+          const noteLeft = note.x
+          const noteTop = note.y
+          const noteRight = note.x + note.width
+          const noteBottom = note.y + note.height
+
+          // Verifica se a nota intersecta com o retângulo de seleção
+          return (
+            noteLeft < selectionRect.right &&
+            noteRight > selectionRect.left &&
+            noteTop < selectionRect.bottom &&
+            noteBottom > selectionRect.top
+          )
+        })
+
+        // Seleciona as notas encontradas
+        if (notesInSelection.length > 0 && onNoteSelect) {
+          notesInSelection.forEach((note) => {
+            onNoteSelect(note.id, true) // Usa shiftKey=true para adicionar à seleção
+          })
+        }
+      }
+
+      setIsSelecting(false)
+      setSelectionBox(null)
+    }
+  }, [isSelecting, selectionBox, notes, onNoteSelect])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -151,7 +240,7 @@ function Canvas({
   }, [handleWheel])
 
   useEffect(() => {
-    if (isPanning) {
+    if (isPanning || isSelecting) {
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
 
@@ -160,7 +249,7 @@ function Canvas({
         window.removeEventListener('mouseup', handleMouseUp)
       }
     }
-  }, [isPanning, handleMouseMove, handleMouseUp])
+  }, [isPanning, isSelecting, handleMouseMove, handleMouseUp])
 
   // Desenhar grade
   const gridPattern = useCallback(() => {
@@ -184,10 +273,20 @@ function Canvas({
     )
   }, [zoom, pan, gridSize])
 
+  // Calcular dimensões do retângulo de seleção para renderização
+  const selectionRect = selectionBox
+    ? {
+        left: Math.min(selectionBox.startX, selectionBox.endX),
+        top: Math.min(selectionBox.startY, selectionBox.endY),
+        width: Math.abs(selectionBox.endX - selectionBox.startX),
+        height: Math.abs(selectionBox.endY - selectionBox.startY),
+      }
+    : null
+
   return (
     <div
       ref={canvasRef}
-      className={`canvas ${isPanning ? 'panning' : ''}`}
+      className={`canvas ${isPanning ? 'panning' : ''} ${isSelecting ? 'selecting' : ''}`}
       onMouseDown={handleMouseDown}
     >
       {gridPattern()}
@@ -199,6 +298,18 @@ function Canvas({
         }}
         onMouseDown={handleBackgroundMouseDown}
       >
+        {/* Retângulo de seleção */}
+        {selectionRect && (
+          <div
+            className="selection-box"
+            style={{
+              left: selectionRect.left,
+              top: selectionRect.top,
+              width: selectionRect.width,
+              height: selectionRect.height,
+            }}
+          />
+        )}
         {currentFolderId === null &&
           folders.map((folder) => (
             <FolderCard
