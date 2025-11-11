@@ -28,23 +28,96 @@ export const detectAlignmentGuides = (
   const verticalGuides = new Map<number, string[]>()
   // Guias horizontais (alinhamento vertical - mesma coordenada Y)
   const horizontalGuides = new Map<number, string[]>()
+  // Candidatos para snapping (menor distância)
+  const snapCandidates: { x?: number; y?: number; distX?: number; distY?: number } = {}
 
   otherNotes.forEach((otherNote) => {
     if (otherNote.id === note.id) return
+
+    // Borda esquerda
+    const leftDiff = Math.abs(note.x - otherNote.x)
+    if (leftDiff < threshold) {
+      const candidateX = otherNote.x
+      const dist = leftDiff
+      if (!snapCandidates.x || dist < snapCandidates.distX!) {
+        snapCandidates.x = candidateX
+        snapCandidates.distX = dist
+        snapX = candidateX
+      }
+      if (!verticalGuides.has(candidateX)) {
+        verticalGuides.set(candidateX, [])
+      }
+      verticalGuides.get(candidateX)!.push(otherNote.id)
+    }
+
+    // Borda direita
+    const noteRight = note.x + note.width
+    const otherRight = otherNote.x + otherNote.width
+    const rightDiff = Math.abs(noteRight - otherRight)
+    if (rightDiff < threshold) {
+      const candidateX = otherRight - note.width
+      const dist = rightDiff
+      if (!snapCandidates.x || dist < snapCandidates.distX!) {
+        snapCandidates.x = candidateX
+        snapCandidates.distX = dist
+        snapX = candidateX
+      }
+      if (!verticalGuides.has(otherRight)) {
+        verticalGuides.set(otherRight, [])
+      }
+      verticalGuides.get(otherRight)!.push(otherNote.id)
+    }
 
     // Centro horizontal (X + width/2)
     const otherCenterX = otherNote.x + otherNote.width / 2
     const noteCenterX = note.x + note.width / 2
     const centerXDiff = Math.abs(noteCenterX - otherCenterX)
     if (centerXDiff < threshold) {
-      const guideX = otherCenterX - note.width / 2
-      if (!verticalGuides.has(guideX)) {
-        verticalGuides.set(guideX, [])
+      const candidateX = otherCenterX - note.width / 2
+      const dist = centerXDiff
+      if (!snapCandidates.x || dist < snapCandidates.distX!) {
+        snapCandidates.x = candidateX
+        snapCandidates.distX = dist
+        snapX = candidateX
       }
-      verticalGuides.get(guideX)!.push(otherNote.id)
-      if (!snapX) {
-        snapX = guideX
+      if (!verticalGuides.has(otherCenterX)) {
+        verticalGuides.set(otherCenterX, [])
       }
+      verticalGuides.get(otherCenterX)!.push(otherNote.id)
+    }
+
+    // Borda superior
+    const topDiff = Math.abs(note.y - otherNote.y)
+    if (topDiff < threshold) {
+      const candidateY = otherNote.y
+      const dist = topDiff
+      if (!snapCandidates.y || dist < snapCandidates.distY!) {
+        snapCandidates.y = candidateY
+        snapCandidates.distY = dist
+        snapY = candidateY
+      }
+      if (!horizontalGuides.has(candidateY)) {
+        horizontalGuides.set(candidateY, [])
+      }
+      horizontalGuides.get(candidateY)!.push(otherNote.id)
+    }
+
+    // Borda inferior
+    const noteBottom = note.y + note.height
+    const otherBottom = otherNote.y + otherNote.height
+    const bottomDiff = Math.abs(noteBottom - otherBottom)
+    if (bottomDiff < threshold) {
+      const candidateY = otherBottom - note.height
+      const dist = bottomDiff
+      if (!snapCandidates.y || dist < snapCandidates.distY!) {
+        snapCandidates.y = candidateY
+        snapCandidates.distY = dist
+        snapY = candidateY
+      }
+      if (!horizontalGuides.has(otherBottom)) {
+        horizontalGuides.set(otherBottom, [])
+      }
+      horizontalGuides.get(otherBottom)!.push(otherNote.id)
     }
 
     // Centro vertical (Y + height/2)
@@ -52,77 +125,42 @@ export const detectAlignmentGuides = (
     const noteCenterY = note.y + note.height / 2
     const centerYDiff = Math.abs(noteCenterY - otherCenterY)
     if (centerYDiff < threshold) {
-      const guideY = otherCenterY - note.height / 2
-      if (!horizontalGuides.has(guideY)) {
-        horizontalGuides.set(guideY, [])
+      const candidateY = otherCenterY - note.height / 2
+      const dist = centerYDiff
+      if (!snapCandidates.y || dist < snapCandidates.distY!) {
+        snapCandidates.y = candidateY
+        snapCandidates.distY = dist
+        snapY = candidateY
       }
-      horizontalGuides.get(guideY)!.push(otherNote.id)
-      if (!snapY) {
-        snapY = guideY
+      if (!horizontalGuides.has(otherCenterY)) {
+        horizontalGuides.set(otherCenterY, [])
       }
-    }
-
-    // Borda esquerda
-    const leftDiff = Math.abs(note.x - otherNote.x)
-    if (leftDiff < threshold) {
-      edgeGuides.push({ type: 'left', position: otherNote.x, noteId: otherNote.id })
-      if (!snapX) {
-        snapX = otherNote.x
-      }
-    }
-
-    // Borda direita
-    const rightDiff = Math.abs(note.x + note.width - (otherNote.x + otherNote.width))
-    if (rightDiff < threshold) {
-      edgeGuides.push({
-        type: 'right',
-        position: otherNote.x + otherNote.width - note.width,
-        noteId: otherNote.id,
-      })
-      if (!snapX) {
-        snapX = otherNote.x + otherNote.width - note.width
-      }
-    }
-
-    // Borda superior
-    const topDiff = Math.abs(note.y - otherNote.y)
-    if (topDiff < threshold) {
-      edgeGuides.push({ type: 'top', position: otherNote.y, noteId: otherNote.id })
-      if (!snapY) {
-        snapY = otherNote.y
-      }
-    }
-
-    // Borda inferior
-    const bottomDiff = Math.abs(note.y + note.height - (otherNote.y + otherNote.height))
-    if (bottomDiff < threshold) {
-      edgeGuides.push({
-        type: 'bottom',
-        position: otherNote.y + otherNote.height - note.height,
-        noteId: otherNote.id,
-      })
-      if (!snapY) {
-        snapY = otherNote.y + otherNote.height - note.height
-      }
+      horizontalGuides.get(otherCenterY)!.push(otherNote.id)
     }
   })
 
-  // Adicionar guias verticais
+  // Adicionar guias verticais (apenas as que estão próximas do snap)
   verticalGuides.forEach((noteIds, position) => {
-    guides.push({
-      type: 'vertical',
-      position,
-      notes: noteIds,
-    })
+    // Só adiciona guia se estiver próxima do snap ou se for a única
+    if (snapX === undefined || Math.abs(position - (snapX + note.width / 2)) < threshold * 2) {
+      guides.push({
+        type: 'vertical',
+        position,
+        notes: noteIds,
+      })
+    }
   })
 
-  // Adicionar guias horizontais
+  // Adicionar guias horizontais (apenas as que estão próximas do snap)
   horizontalGuides.forEach((noteIds, position) => {
-    guides.push({
-      type: 'horizontal',
-      position,
-      notes: noteIds,
-    })
+    // Só adiciona guia se estiver próxima do snap ou se for a única
+    if (snapY === undefined || Math.abs(position - (snapY + note.height / 2)) < threshold * 2) {
+      guides.push({
+        type: 'horizontal',
+        position,
+        notes: noteIds,
+      })
+    }
   })
 
   return {
@@ -141,7 +179,7 @@ export const applySnapping = (
   width: number,
   height: number,
   otherNotes: Note[],
-  threshold: number = 5,
+  threshold: number = 10,
 ): { x: number; y: number; guides: AlignmentGuide[] } => {
   const tempNote: Note = {
     id: 'temp',

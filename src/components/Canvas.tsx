@@ -363,16 +363,23 @@ function Canvas({
           />
         ))}
 
-        {/* Guias de alinhamento */}
-        {alignmentGuides.map((guide, index) => (
-          <div
-            key={`guide-${guide.type}-${guide.position}-${index}`}
-            className={`alignment-guide alignment-guide-${guide.type}`}
-            style={{
-              [guide.type === 'vertical' ? 'left' : 'top']: guide.position,
-            }}
-          />
-        ))}
+        {/* Guias de alinhamento - renderizadas em coordenadas do canvas */}
+        {alignmentGuides.length > 0 &&
+          alignmentGuides.map((guide, index) => {
+            // Para guias verticais, a posição é o X do centro ou borda
+            // Para guias horizontais, a posição é o Y do centro ou borda
+            const isVertical = guide.type === 'vertical'
+            return (
+              <div
+                key={`guide-${guide.type}-${guide.position}-${index}`}
+                className={`alignment-guide alignment-guide-${guide.type}`}
+                style={{
+                  [isVertical ? 'left' : 'top']: guide.position,
+                  [isVertical ? 'width' : 'height']: isVertical ? '1.5px' : '1.5px',
+                }}
+              />
+            )
+          })}
       </div>
     </div>
   )
