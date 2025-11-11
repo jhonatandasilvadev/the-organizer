@@ -487,6 +487,77 @@ function App() {
     }
   }, [currentFolderId, organizeNotesInFolder, currentNotes.length])
 
+  // Exportar dados
+  const handleExport = useCallback(() => {
+    const data = {
+      notes,
+      folders,
+      nextZIndex: nextZIndexRef.current,
+      exportedAt: new Date().toISOString(),
+      version: '1.0',
+    }
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `the-organizer-backup-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [notes, folders])
+
+  // Importar dados
+  const handleImport = useCallback(() => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/json'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const text = event.target?.result as string
+          const data = JSON.parse(text)
+
+          if (
+            !data.notes ||
+            !Array.isArray(data.notes) ||
+            !data.folders ||
+            !Array.isArray(data.folders)
+          ) {
+            alert('Arquivo inválido. O arquivo deve conter notas e pastas.')
+            return
+          }
+
+          const confirmMessage = `Importar ${data.notes.length} nota(s) e ${data.folders.length} pasta(s)?\n\nIsso irá substituir todos os dados atuais.`
+          if (!window.confirm(confirmMessage)) return
+
+          setNotes(data.notes || [])
+          setFolders(data.folders || [])
+          if (typeof data.nextZIndex === 'number') {
+            nextZIndexRef.current = data.nextZIndex
+          }
+          setCurrentFolderId(null)
+          setSelectedNotes(new Set())
+          setSearchQuery('')
+          setPan({ x: 0, y: 0 })
+          setZoom(1)
+
+          alert('Dados importados com sucesso!')
+        } catch (error) {
+          console.error('Erro ao importar:', error)
+          alert('Erro ao importar arquivo. Verifique se o arquivo é válido.')
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  }, [])
+
   // Obter nome da pasta atual
   const currentFolder = currentFolderId ? folders.find((f) => f.id === currentFolderId) : null
 
@@ -511,6 +582,8 @@ function App() {
         onMoveSelectedToMaster={() => moveSelectedNotesToFolder(null)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onExport={handleExport}
+        onImport={handleImport}
       />
       <Canvas
         notes={currentNotes}

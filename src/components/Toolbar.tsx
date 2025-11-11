@@ -22,6 +22,8 @@ interface ToolbarProps {
   onMoveSelectedToMaster?: () => void
   searchQuery?: string
   onSearchChange?: (query: string) => void
+  onExport?: () => void
+  onImport?: () => void
 }
 
 function Toolbar({
@@ -43,6 +45,8 @@ function Toolbar({
   onMoveSelectedToMaster,
   searchQuery = '',
   onSearchChange,
+  onExport,
+  onImport,
 }: ToolbarProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -241,6 +245,38 @@ function Toolbar({
               </div>
             )}
           </div>
+        )}
+
+        {onExport && (
+          <button className="toolbar-btn secondary" onClick={onExport} title="Exportar dados (JSON)">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path
+                d="M8 2V10M8 10L5 7M8 10L11 7M3 12H13"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            Exportar
+          </button>
+        )}
+
+        {onImport && (
+          <button className="toolbar-btn secondary" onClick={onImport} title="Importar dados (JSON)">
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path
+                d="M8 14V6M8 6L5 9M8 6L11 9M3 4H13"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            Importar
+          </button>
         )}
 
         {noteCount > 0 && (
