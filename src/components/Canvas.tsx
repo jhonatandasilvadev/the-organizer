@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import StickyNote from './StickyNote'
 import FolderCard from './FolderCard'
 import { Note, Folder } from '../types'
+import { AlignmentGuide } from '../utils/alignmentUtils'
 import './Canvas.css'
 
 interface CanvasProps {
@@ -76,6 +77,7 @@ function Canvas({
     endX: number
     endY: number
   } | null>(null)
+  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([])
 
   // Zoom com Ctrl + Scroll
   const handleWheel = useCallback(
@@ -356,6 +358,19 @@ function Canvas({
             showPinButton={currentFolderId === null}
             onAddTag={onAddTag}
             onRemoveTag={onRemoveTag}
+            allNotes={notes}
+            onAlignmentGuidesChange={setAlignmentGuides}
+          />
+        ))}
+
+        {/* Guias de alinhamento */}
+        {alignmentGuides.map((guide, index) => (
+          <div
+            key={`guide-${guide.type}-${guide.position}-${index}`}
+            className={`alignment-guide alignment-guide-${guide.type}`}
+            style={{
+              [guide.type === 'vertical' ? 'left' : 'top']: guide.position,
+            }}
           />
         ))}
       </div>

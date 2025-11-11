@@ -33,6 +33,31 @@
   z-index: 10000;
 }
 
+/* Guias de alinhamento */
+.alignment-guide {
+  position: absolute;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.6;
+  transition: opacity 0.15s ease-out;
+}
+
+.alignment-guide-vertical {
+  top: -10000px;
+  bottom: -10000px;
+  width: 1.5px;
+  background: #007aff;
+  box-shadow: 0 0 3px rgba(0, 122, 255, 0.5);
+}
+
+.alignment-guide-horizontal {
+  left: -10000px;
+  right: -10000px;
+  height: 1.5px;
+  background: #007aff;
+  box-shadow: 0 0 3px rgba(0, 122, 255, 0.5);
+}
+
 .canvas .grid {
   position: absolute;
   top: 0;

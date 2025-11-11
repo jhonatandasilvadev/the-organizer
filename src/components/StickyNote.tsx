@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Note } from '../types'
+import { applySnapping, AlignmentGuide } from '../utils/alignmentUtils'
 import './StickyNote.css'
 
 interface StickyNoteProps {
@@ -22,6 +23,8 @@ interface StickyNoteProps {
   showPinButton?: boolean
   onAddTag?: (id: string, tag: string) => void
   onRemoveTag?: (id: string, tag: string) => void
+  allNotes?: Note[] // Todas as notas para detectar alinhamento
+  onAlignmentGuidesChange?: (guides: AlignmentGuide[]) => void
 }
 
 type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw' | 'n' | 's' | 'e' | 'w' | null
@@ -46,6 +49,8 @@ function StickyNote({
   showPinButton = false,
   onAddTag,
   onRemoveTag,
+  allNotes = [],
+  onAlignmentGuidesChange,
 }: StickyNoteProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -157,11 +162,29 @@ function StickyNote({
           const mouseCanvasY = (e.clientY - canvasRect.top - pan.y) / zoom
 
           if (smoothMovement) {
-            // Movimento suave: atualiza posição temporária sem snap
-            const newX = mouseCanvasX - dragStart.x
-            const newY = mouseCanvasY - dragStart.y
-            setTempPosition({ x: newX, y: newY })
-            onGroupDrag?.(note.id, { x: newX, y: newY })
+            // Movimento suave: atualiza posição temporária com snapping de alinhamento
+            const rawX = mouseCanvasX - dragStart.x
+            const rawY = mouseCanvasY - dragStart.y
+
+            // Aplicar snapping de alinhamento se houver outras notas
+            const otherNotes = allNotes.filter((n) => n.id !== note.id)
+            if (otherNotes.length > 0) {
+              const snapped = applySnapping(
+                rawX,
+                rawY,
+                note.width,
+                note.height,
+                otherNotes,
+                10, // threshold de 10px
+              )
+              setTempPosition({ x: snapped.x, y: snapped.y })
+              onAlignmentGuidesChange?.(snapped.guides)
+              onGroupDrag?.(note.id, { x: snapped.x, y: snapped.y })
+            } else {
+              setTempPosition({ x: rawX, y: rawY })
+              onAlignmentGuidesChange?.([])
+              onGroupDrag?.(note.id, { x: rawX, y: rawY })
+            }
           } else {
             // Movimento com snap imediato
             const newX = snapToGrid(mouseCanvasX - dragStart.x)
@@ -216,6 +239,7 @@ function StickyNote({
 
         if (smoothMovement) {
           if (tempPosition) {
+            // Aplica snapping de grid no final
             finalX = snapToGrid(tempPosition.x)
             finalY = snapToGrid(tempPosition.y)
             onUpdate(note.id, { x: finalX, y: finalY })
@@ -226,6 +250,8 @@ function StickyNote({
           finalY = note.y
         }
 
+        // Limpa guias de alinhamento
+        onAlignmentGuidesChange?.([])
         onGroupDragEnd?.(note.id, { x: finalX, y: finalY })
       }
 
@@ -260,6 +286,8 @@ function StickyNote({
     canvasRef,
     onGroupDrag,
     onGroupDragEnd,
+    allNotes,
+    onAlignmentGuidesChange,
   ])
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
