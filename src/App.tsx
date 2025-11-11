@@ -5,6 +5,7 @@ import { Note, Folder } from './types'
 import { computeFolderPosition, generateFolderName } from './utils/folderUtils'
 import { GRID_SIZE, snapToGrid as snapToGridUtil } from './utils/gridUtils'
 import { isStoredNotesPayload, isStoredFoldersPayload } from './utils/storageUtils'
+import { HistoryManager } from './utils/historyUtils'
 import './App.css'
 
 const COLORS = [
@@ -35,6 +36,8 @@ function App() {
     originals: Record<string, { x: number; y: number }>
   }>({ anchorId: null, originals: {} })
   const nextZIndexRef = useRef(1)
+  const historyManagerRef = useRef(new HistoryManager())
+  const isHistoryActionRef = useRef(false)
   const snapToGrid = useCallback((value: number) => snapToGridUtil(value, GRID_SIZE), [])
 
   // Carregar notas e pastas do localStorage
@@ -77,6 +80,53 @@ function App() {
       }
     }
   }, [])
+
+  // Salvar estado no histórico (com debounce para evitar muitos estados)
+  const isInitialLoadRef = useRef(true)
+  const historyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    // Ignora durante carregamento inicial
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false
+      // Inicializa histórico com estado atual após carregamento
+      setTimeout(() => {
+        isHistoryActionRef.current = true
+        historyManagerRef.current.initialize({
+          notes,
+          folders,
+          nextZIndex: nextZIndexRef.current,
+        })
+        isHistoryActionRef.current = false
+      }, 200)
+      return
+    }
+
+    // Ignora durante ações de undo/redo
+    if (isHistoryActionRef.current) {
+      isHistoryActionRef.current = false
+      return
+    }
+
+    // Debounce: adiciona ao histórico após 500ms de inatividade
+    if (historyTimeoutRef.current) {
+      clearTimeout(historyTimeoutRef.current)
+    }
+
+    historyTimeoutRef.current = setTimeout(() => {
+      historyManagerRef.current.push({
+        notes,
+        folders,
+        nextZIndex: nextZIndexRef.current,
+      })
+    }, 500)
+
+    return () => {
+      if (historyTimeoutRef.current) {
+        clearTimeout(historyTimeoutRef.current)
+      }
+    }
+  }, [notes, folders])
 
   // Salvar notas no localStorage
   useEffect(() => {
@@ -536,6 +586,7 @@ function App() {
           const confirmMessage = `Importar ${data.notes.length} nota(s) e ${data.folders.length} pasta(s)?\n\nIsso irá substituir todos os dados atuais.`
           if (!window.confirm(confirmMessage)) return
 
+          isHistoryActionRef.current = true
           setNotes(data.notes || [])
           setFolders(data.folders || [])
           if (typeof data.nextZIndex === 'number') {
@@ -546,6 +597,11 @@ function App() {
           setSearchQuery('')
           setPan({ x: 0, y: 0 })
           setZoom(1)
+          historyManagerRef.current.initialize({
+            notes: data.notes || [],
+            folders: data.folders || [],
+            nextZIndex: data.nextZIndex || 1,
+          })
 
           alert('Dados importados com sucesso!')
         } catch (error) {
@@ -556,6 +612,78 @@ function App() {
       reader.readAsText(file)
     }
     input.click()
+  }, [])
+
+  // Undo/Redo
+  const handleUndo = useCallback(() => {
+    const state = historyManagerRef.current.undo()
+    if (state) {
+      isHistoryActionRef.current = true
+      setNotes(state.notes as Note[])
+      setFolders(state.folders as Folder[])
+      nextZIndexRef.current = state.nextZIndex
+      // Atualiza estado do histórico imediatamente
+      setTimeout(() => {
+        setHistoryState({
+          canUndo: historyManagerRef.current.canUndo(),
+          canRedo: historyManagerRef.current.canRedo(),
+        })
+      }, 0)
+    }
+  }, [])
+
+  const handleRedo = useCallback(() => {
+    const state = historyManagerRef.current.redo()
+    if (state) {
+      isHistoryActionRef.current = true
+      setNotes(state.notes as Note[])
+      setFolders(state.folders as Folder[])
+      nextZIndexRef.current = state.nextZIndex
+      // Atualiza estado do histórico imediatamente
+      setTimeout(() => {
+        setHistoryState({
+          canUndo: historyManagerRef.current.canUndo(),
+          canRedo: historyManagerRef.current.canRedo(),
+        })
+      }, 0)
+    }
+  }, [])
+
+  // Atalhos de teclado para Undo/Redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        if (historyManagerRef.current.canUndo()) {
+          handleUndo()
+        }
+      } else if (
+        ((e.ctrlKey || e.metaKey) && e.key === 'y') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
+      ) {
+        e.preventDefault()
+        if (historyManagerRef.current.canRedo()) {
+          handleRedo()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleUndo, handleRedo])
+
+  // Estado para forçar re-render quando histórico mudar
+  const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false })
+
+  // Atualiza estado do histórico periodicamente (para refletir mudanças após debounce)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHistoryState({
+        canUndo: historyManagerRef.current.canUndo(),
+        canRedo: historyManagerRef.current.canRedo(),
+      })
+    }, 200)
+    return () => clearInterval(interval)
   }, [])
 
   // Obter nome da pasta atual
@@ -584,6 +712,10 @@ function App() {
         onSearchChange={setSearchQuery}
         onExport={handleExport}
         onImport={handleImport}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={historyState.canUndo}
+        canRedo={historyState.canRedo}
       />
       <Canvas
         notes={currentNotes}

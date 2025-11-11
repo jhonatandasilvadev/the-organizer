@@ -24,6 +24,10 @@ interface ToolbarProps {
   onSearchChange?: (query: string) => void
   onExport?: () => void
   onImport?: () => void
+  onUndo?: () => void
+  onRedo?: () => void
+  canUndo?: boolean
+  canRedo?: boolean
 }
 
 function Toolbar({
@@ -47,6 +51,10 @@ function Toolbar({
   onSearchChange,
   onExport,
   onImport,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }: ToolbarProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -248,7 +256,11 @@ function Toolbar({
         )}
 
         {onExport && (
-          <button className="toolbar-btn secondary" onClick={onExport} title="Exportar dados (JSON)">
+          <button
+            className="toolbar-btn secondary"
+            onClick={onExport}
+            title="Exportar dados (JSON)"
+          >
             <svg width="16" height="16" viewBox="0 0 16 16">
               <path
                 d="M8 2V10M8 10L5 7M8 10L11 7M3 12H13"
@@ -264,7 +276,11 @@ function Toolbar({
         )}
 
         {onImport && (
-          <button className="toolbar-btn secondary" onClick={onImport} title="Importar dados (JSON)">
+          <button
+            className="toolbar-btn secondary"
+            onClick={onImport}
+            title="Importar dados (JSON)"
+          >
             <svg width="16" height="16" viewBox="0 0 16 16">
               <path
                 d="M8 14V6M8 6L5 9M8 6L11 9M3 4H13"
@@ -276,6 +292,48 @@ function Toolbar({
               />
             </svg>
             Importar
+          </button>
+        )}
+
+        {onUndo && (
+          <button
+            className="toolbar-btn secondary"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Desfazer (Ctrl+Z)"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path
+                d="M3 8C3 11.3137 5.68629 14 9 14C11.2091 14 13.1313 12.6569 14.2426 10.7574M3 8L6 5M3 8L6 11"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            Desfazer
+          </button>
+        )}
+
+        {onRedo && (
+          <button
+            className="toolbar-btn secondary"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path
+                d="M13 8C13 4.68629 10.3137 2 7 2C4.79086 2 2.86869 3.34315 1.75736 5.24264M13 8L10 5M13 8L10 11"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            Refazer
           </button>
         )}
 

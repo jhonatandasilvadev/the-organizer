@@ -87,6 +87,17 @@
   transform: translateY(0);
 }
 
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.toolbar-btn:disabled:hover {
+  transform: none;
+  background: inherit;
+}
+
 .selection-actions {
   display: flex;
   align-items: center;
