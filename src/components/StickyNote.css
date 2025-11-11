@@ -266,3 +266,120 @@
   width: 8px;
   cursor: ew-resize;
 }
+
+/* Tags */
+.note-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 16px 12px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  min-height: 36px;
+  align-items: center;
+}
+
+[data-theme='dark'] .note-tags {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.note-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+.note-tag-remove {
+  background: transparent;
+  border: none;
+  color: #007aff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.note-tag-remove:hover {
+  background: rgba(0, 122, 255, 0.2);
+  color: #ff3b30;
+}
+
+.note-tag-input {
+  flex: 1;
+  min-width: 60px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px dashed rgba(0, 122, 255, 0.3);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--note-text);
+  outline: none;
+}
+
+.note-tag-input:focus {
+  border-color: #007aff;
+  border-style: solid;
+}
+
+.note-tag-add {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px dashed rgba(0, 122, 255, 0.3);
+  border-radius: 12px;
+  color: #007aff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.note-tag-add:hover {
+  background: rgba(0, 122, 255, 0.1);
+  border-color: #007aff;
+  border-style: solid;
+}
+
+.note-tags-empty {
+  padding: 8px 16px 12px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+[data-theme='dark'] .note-tags-empty {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.note-tag-add-empty {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px dashed rgba(0, 122, 255, 0.3);
+  border-radius: 12px;
+  color: #007aff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.note-tag-add-empty:hover {
+  background: rgba(0, 122, 255, 0.1);
+  border-color: #007aff;
+  border-style: solid;
+}

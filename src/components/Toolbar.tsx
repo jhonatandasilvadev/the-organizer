@@ -28,6 +28,9 @@ interface ToolbarProps {
   onRedo?: () => void
   canUndo?: boolean
   canRedo?: boolean
+  allTags?: string[]
+  selectedTag?: string | null
+  onTagSelect?: (tag: string | null) => void
 }
 
 function Toolbar({
@@ -55,6 +58,9 @@ function Toolbar({
   onRedo,
   canUndo = false,
   canRedo = false,
+  allTags = [],
+  selectedTag = null,
+  onTagSelect,
 }: ToolbarProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -388,6 +394,32 @@ function Toolbar({
           Ctrl + Scroll: Zoom • Ctrl + Drag: Mover • Shift + Click: Selecionar
         </div>
       </div>
+
+      {/* Filtros de Tags */}
+      {allTags.length > 0 && (
+        <div className="toolbar-section toolbar-tags">
+          <div className="tags-label">Tags:</div>
+          <div className="tags-list">
+            <button
+              className={`tag-filter ${selectedTag === null ? 'active' : ''}`}
+              onClick={() => onTagSelect?.(null)}
+              title="Mostrar todas as notas"
+            >
+              Todas
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                className={`tag-filter ${selectedTag === tag ? 'active' : ''}`}
+                onClick={() => onTagSelect?.(tag)}
+                title={`Filtrar por #${tag}`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

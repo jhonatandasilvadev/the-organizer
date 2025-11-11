@@ -20,6 +20,8 @@ interface StickyNoteProps {
   onGroupDragEnd?: (id: string, position: { x: number; y: number }) => void
   onTogglePin?: (id: string) => void
   showPinButton?: boolean
+  onAddTag?: (id: string, tag: string) => void
+  onRemoveTag?: (id: string, tag: string) => void
 }
 
 type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw' | 'n' | 's' | 'e' | 'w' | null
@@ -42,6 +44,8 @@ function StickyNote({
   onGroupDragEnd,
   onTogglePin,
   showPinButton = false,
+  onAddTag,
+  onRemoveTag,
 }: StickyNoteProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -283,6 +287,39 @@ function StickyNote({
     onTogglePin?.(note.id)
   }
 
+  const [isEditingTags, setIsEditingTags] = useState(false)
+  const [tagInput, setTagInput] = useState('')
+  const tagInputRef = useRef<HTMLInputElement>(null)
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault()
+      const tag = tagInput.trim().toLowerCase()
+      if (!note.tags?.includes(tag)) {
+        onAddTag?.(note.id, tag)
+      }
+      setTagInput('')
+    } else if (e.key === 'Escape') {
+      setIsEditingTags(false)
+      setTagInput('')
+    }
+  }
+
+  const handleRemoveTag = (tag: string) => {
+    onRemoveTag?.(note.id, tag)
+  }
+
+  const handleAddTagClick = () => {
+    setIsEditingTags(true)
+    setTimeout(() => tagInputRef.current?.focus(), 0)
+  }
+
+  useEffect(() => {
+    if (!isEditingTags) {
+      setTagInput('')
+    }
+  }, [isEditingTags])
+
   // Detectar se é nota preta para usar texto branco
   const isBlackNote = note.color === '#1d1d1f'
   const textColor = isBlackNote ? 'rgba(255, 255, 255, 0.9)' : 'var(--note-text)'
@@ -369,6 +406,52 @@ function StickyNote({
         placeholder="Digite aqui..."
         spellCheck={false}
       />
+
+      {/* Tags */}
+      {(note.tags && note.tags.length > 0) || isEditingTags ? (
+        <div className="note-tags">
+          {note.tags?.map((tag) => (
+            <span key={tag} className="note-tag">
+              #{tag}
+              <button
+                className="note-tag-remove"
+                onClick={() => handleRemoveTag(tag)}
+                title="Remover tag"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {isEditingTags && (
+            <input
+              ref={tagInputRef}
+              type="text"
+              className="note-tag-input"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagInputKeyDown}
+              onBlur={() => {
+                if (!tagInput.trim()) {
+                  setIsEditingTags(false)
+                }
+              }}
+              placeholder="Nova tag..."
+              spellCheck={false}
+            />
+          )}
+          {!isEditingTags && (
+            <button className="note-tag-add" onClick={handleAddTagClick} title="Adicionar tag">
+              +
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="note-tags-empty">
+          <button className="note-tag-add-empty" onClick={handleAddTagClick} title="Adicionar tag">
+            + Tag
+          </button>
+        </div>
+      )}
 
       {/* Resize handles */}
       <div className="resize-handle nw" onMouseDown={(e) => handleResizeStart(e, 'nw')} />

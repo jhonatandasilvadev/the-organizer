@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Canvas from './components/Canvas'
 import Toolbar from './components/Toolbar'
 import { Note, Folder } from './types'
@@ -28,6 +28,7 @@ function App() {
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [previewPositions, setPreviewPositions] = useState<
     Record<string, { x: number; y: number }>
   >({})
@@ -148,35 +149,54 @@ function App() {
     }
   }, [folders])
 
-  // Filtrar e ordenar notas baseado na pasta atual, busca e pin
-  const currentNotes = notes
-    .filter((note) => {
-      // Filtro por pasta
-      const folderMatch =
-        currentFolderId === null ? !note.folderId : note.folderId === currentFolderId
-
-      if (!folderMatch) return false
-
-      // Filtro por busca (se houver query)
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim()
-        const titleMatch = note.title.toLowerCase().includes(query)
-        const contentMatch = note.content.toLowerCase().includes(query)
-        const tagsMatch = note.tags?.some((tag) => tag.toLowerCase().includes(query)) ?? false
-        return titleMatch || contentMatch || tagsMatch
+  // Obter todas as tags únicas das notas
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>()
+    notes.forEach((note) => {
+      if (note.tags) {
+        note.tags.forEach((tag) => tagSet.add(tag))
       }
+    })
+    return Array.from(tagSet).sort()
+  }, [notes])
 
-      return true
-    })
-    .sort((a, b) => {
-      // No Master Workflow, ordenar por pin primeiro
-      if (currentFolderId === null) {
-        if (a.isPinned && !b.isPinned) return -1
-        if (!a.isPinned && b.isPinned) return 1
-      }
-      // Depois por zIndex (mais recente primeiro)
-      return b.zIndex - a.zIndex
-    })
+  // Filtrar e ordenar notas baseado na pasta atual, busca, tag e pin
+  const currentNotes = useMemo(() => {
+    return notes
+      .filter((note) => {
+        // Filtro por pasta
+        const folderMatch =
+          currentFolderId === null ? !note.folderId : note.folderId === currentFolderId
+
+        if (!folderMatch) return false
+
+        // Filtro por tag selecionada
+        if (selectedTag) {
+          const hasTag = note.tags?.includes(selectedTag) ?? false
+          if (!hasTag) return false
+        }
+
+        // Filtro por busca (se houver query)
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase().trim()
+          const titleMatch = note.title.toLowerCase().includes(query)
+          const contentMatch = note.content.toLowerCase().includes(query)
+          const tagsMatch = note.tags?.some((tag) => tag.toLowerCase().includes(query)) ?? false
+          return titleMatch || contentMatch || tagsMatch
+        }
+
+        return true
+      })
+      .sort((a, b) => {
+        // No Master Workflow, ordenar por pin primeiro
+        if (currentFolderId === null) {
+          if (a.isPinned && !b.isPinned) return -1
+          if (!a.isPinned && b.isPinned) return 1
+        }
+        // Depois por zIndex (mais recente primeiro)
+        return b.zIndex - a.zIndex
+      })
+  }, [notes, currentFolderId, selectedTag, searchQuery])
 
   const addNote = useCallback(() => {
     // Se estiver dentro de uma pasta, organiza as notas lado a lado
@@ -222,6 +242,32 @@ function App() {
       prev.map((note) => {
         if (note.id === id) {
           return { ...note, isPinned: !note.isPinned }
+        }
+        return note
+      }),
+    )
+  }, [])
+
+  const addTag = useCallback((id: string, tag: string) => {
+    setNotes((prev) =>
+      prev.map((note) => {
+        if (note.id === id) {
+          const currentTags = note.tags || []
+          if (!currentTags.includes(tag)) {
+            return { ...note, tags: [...currentTags, tag] }
+          }
+        }
+        return note
+      }),
+    )
+  }, [])
+
+  const removeTag = useCallback((id: string, tag: string) => {
+    setNotes((prev) =>
+      prev.map((note) => {
+        if (note.id === id) {
+          const currentTags = note.tags || []
+          return { ...note, tags: currentTags.filter((t) => t !== tag) }
         }
         return note
       }),
@@ -358,6 +404,7 @@ function App() {
     setCurrentFolderId(folderId)
     setSelectedNotes(new Set())
     setEditingFolderId(null)
+    setSelectedTag(null) // Limpa filtro de tag ao navegar
     // Reset pan e zoom ao navegar
     setPan({ x: 0, y: 0 })
     setZoom(1)
@@ -716,6 +763,9 @@ function App() {
         onRedo={handleRedo}
         canUndo={historyState.canUndo}
         canRedo={historyState.canRedo}
+        allTags={allTags}
+        selectedTag={selectedTag}
+        onTagSelect={setSelectedTag}
       />
       <Canvas
         notes={currentNotes}
@@ -744,6 +794,8 @@ function App() {
         selectedNotes={selectedNotes}
         onNoteSelect={handleNoteSelect}
         onTogglePin={togglePin}
+        onAddTag={addTag}
+        onRemoveTag={removeTag}
       />
     </div>
   )

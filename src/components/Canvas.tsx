@@ -31,6 +31,8 @@ interface CanvasProps {
   selectedNotes?: Set<string>
   onNoteSelect?: (id: string, shiftKey: boolean) => void
   onTogglePin?: (id: string) => void
+  onAddTag?: (id: string, tag: string) => void
+  onRemoveTag?: (id: string, tag: string) => void
 }
 
 function Canvas({
@@ -60,6 +62,8 @@ function Canvas({
   selectedNotes = new Set(),
   onNoteSelect,
   onTogglePin,
+  onAddTag,
+  onRemoveTag,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -350,6 +354,8 @@ function Canvas({
             onGroupDragEnd={onGroupDragEnd}
             onTogglePin={onTogglePin}
             showPinButton={currentFolderId === null}
+            onAddTag={onAddTag}
+            onRemoveTag={onRemoveTag}
           />
         ))}
       </div>
