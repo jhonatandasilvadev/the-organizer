@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Canvas from './components/Canvas'
 import Toolbar from './components/Toolbar'
 import { Note, Folder } from './types'
+import { computeFolderPosition, generateFolderName } from './utils/folderUtils'
+import { GRID_SIZE, snapToGrid as snapToGridUtil } from './utils/gridUtils'
+import { isStoredNotesPayload, isStoredFoldersPayload } from './utils/storageUtils'
 import './App.css'
 
 const COLORS = [
@@ -11,71 +14,8 @@ const COLORS = [
   '#007aff', // blue
 ]
 
-const GRID_SIZE = 20
 const STORAGE_KEY = 'organizer-notes'
 const STORAGE_FOLDERS_KEY = 'organizer-folders'
-
-const FOLDER_CARD_WIDTH = 180
-const FOLDER_CARD_HEIGHT = 200
-const FOLDER_CARD_SPACING = 32
-const FOLDERS_PER_COLUMN = 4
-
-const computeFolderPosition = (index: number) => {
-  const column = Math.floor(index / FOLDERS_PER_COLUMN)
-  const row = index % FOLDERS_PER_COLUMN
-
-  const startX = 40
-  const startY = 60
-
-  return {
-    x: startX + column * (FOLDER_CARD_WIDTH + FOLDER_CARD_SPACING),
-    y: startY + row * (FOLDER_CARD_HEIGHT + FOLDER_CARD_SPACING),
-  }
-}
-
-const generateFolderName = (existingFolders: Folder[]) => {
-  const baseName = 'Nova Pasta'
-  const existing = new Set(existingFolders.map((folder) => folder.name.toLowerCase()))
-
-  if (!existing.has(baseName.toLowerCase())) {
-    return baseName
-  }
-
-  let counter = 2
-  while (counter < 999) {
-    const candidate = `${baseName} ${counter}`
-    if (!existing.has(candidate.toLowerCase())) {
-      return candidate
-    }
-    counter += 1
-  }
-
-  return `${baseName} ${Date.now()}`
-}
-
-type StoredNotesPayload = {
-  notes?: Note[]
-  nextZIndex?: number
-}
-
-type StoredFoldersPayload = Folder[]
-
-const isStoredNotesPayload = (value: unknown): value is StoredNotesPayload => {
-  if (typeof value !== 'object' || value === null) return false
-  const payload = value as Record<string, unknown>
-  const { notes, nextZIndex } = payload
-
-  const notesValid =
-    notes === undefined ||
-    (Array.isArray(notes) && notes.every((item) => typeof item === 'object' && item !== null))
-  const zIndexValid = nextZIndex === undefined || typeof nextZIndex === 'number'
-
-  return notesValid && zIndexValid
-}
-
-const isStoredFoldersPayload = (value: unknown): value is StoredFoldersPayload => {
-  return Array.isArray(value)
-}
 
 function App() {
   const [notes, setNotes] = useState<Note[]>([])
@@ -86,6 +26,7 @@ function App() {
   const [selectedColor, setSelectedColor] = useState(COLORS[0])
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [searchQuery, setSearchQuery] = useState('')
   const [previewPositions, setPreviewPositions] = useState<
     Record<string, { x: number; y: number }>
   >({})
@@ -94,7 +35,7 @@ function App() {
     originals: Record<string, { x: number; y: number }>
   }>({ anchorId: null, originals: {} })
   const nextZIndexRef = useRef(1)
-  const snapToGrid = useCallback((value: number) => Math.round(value / GRID_SIZE) * GRID_SIZE, [])
+  const snapToGrid = useCallback((value: number) => snapToGridUtil(value, GRID_SIZE), [])
 
   // Carregar notas e pastas do localStorage
   useEffect(() => {
@@ -157,16 +98,35 @@ function App() {
     }
   }, [folders])
 
-  // Filtrar notas baseado na pasta atual
-  const currentNotes = notes.filter((note) => {
-    if (currentFolderId === null) {
-      // Master workflow: mostra apenas notas sem pasta
-      return !note.folderId
-    } else {
-      // Pasta específica: mostra apenas notas dessa pasta
-      return note.folderId === currentFolderId
-    }
-  })
+  // Filtrar e ordenar notas baseado na pasta atual, busca e pin
+  const currentNotes = notes
+    .filter((note) => {
+      // Filtro por pasta
+      const folderMatch =
+        currentFolderId === null ? !note.folderId : note.folderId === currentFolderId
+
+      if (!folderMatch) return false
+
+      // Filtro por busca (se houver query)
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim()
+        const titleMatch = note.title.toLowerCase().includes(query)
+        const contentMatch = note.content.toLowerCase().includes(query)
+        const tagsMatch = note.tags?.some((tag) => tag.toLowerCase().includes(query)) ?? false
+        return titleMatch || contentMatch || tagsMatch
+      }
+
+      return true
+    })
+    .sort((a, b) => {
+      // No Master Workflow, ordenar por pin primeiro
+      if (currentFolderId === null) {
+        if (a.isPinned && !b.isPinned) return -1
+        if (!a.isPinned && b.isPinned) return 1
+      }
+      // Depois por zIndex (mais recente primeiro)
+      return b.zIndex - a.zIndex
+    })
 
   const addNote = useCallback(() => {
     // Se estiver dentro de uma pasta, organiza as notas lado a lado
@@ -205,6 +165,17 @@ function App() {
 
   const updateNote = useCallback((id: string, updates: Partial<Note>) => {
     setNotes((prev) => prev.map((note) => (note.id === id ? { ...note, ...updates } : note)))
+  }, [])
+
+  const togglePin = useCallback((id: string) => {
+    setNotes((prev) =>
+      prev.map((note) => {
+        if (note.id === id) {
+          return { ...note, isPinned: !note.isPinned }
+        }
+        return note
+      }),
+    )
   }, [])
 
   const deleteNote = useCallback((id: string) => {
@@ -538,6 +509,8 @@ function App() {
         selectedNotesCount={selectedNotes.size}
         onMoveSelectedToFolder={moveSelectedNotesToFolder}
         onMoveSelectedToMaster={() => moveSelectedNotesToFolder(null)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
       <Canvas
         notes={currentNotes}
@@ -565,6 +538,7 @@ function App() {
         gridSize={GRID_SIZE}
         selectedNotes={selectedNotes}
         onNoteSelect={handleNoteSelect}
+        onTogglePin={togglePin}
       />
     </div>
   )

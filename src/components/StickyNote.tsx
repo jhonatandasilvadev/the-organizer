@@ -18,6 +18,8 @@ interface StickyNoteProps {
   onGroupDragStart?: (id: string) => void
   onGroupDrag?: (id: string, position: { x: number; y: number }) => void
   onGroupDragEnd?: (id: string, position: { x: number; y: number }) => void
+  onTogglePin?: (id: string) => void
+  showPinButton?: boolean
 }
 
 type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw' | 'n' | 's' | 'e' | 'w' | null
@@ -38,6 +40,8 @@ function StickyNote({
   onGroupDragStart,
   onGroupDrag,
   onGroupDragEnd,
+  onTogglePin,
+  showPinButton = false,
 }: StickyNoteProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -274,6 +278,11 @@ function StickyNote({
     }
   }
 
+  const handleTogglePin = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onTogglePin?.(note.id)
+  }
+
   // Detectar se é nota preta para usar texto branco
   const isBlackNote = note.color === '#1d1d1f'
   const textColor = isBlackNote ? 'rgba(255, 255, 255, 0.9)' : 'var(--note-text)'
@@ -309,6 +318,33 @@ function StickyNote({
           spellCheck={false}
         />
       </div>
+
+      {/* Botão flutuante de pin (apenas no Master Workflow) */}
+      {showPinButton && onTogglePin && (
+        <button
+          className={`pin-btn-floating ${note.isPinned ? 'pinned' : ''}`}
+          onClick={handleTogglePin}
+          title={note.isPinned ? 'Desfixar nota' : 'Fixar nota'}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            {note.isPinned ? (
+              <path
+                d="M8 2L10 6L14 7L11 10L11.5 14L8 12.5L4.5 14L5 10L2 7L6 6L8 2Z"
+                fill="currentColor"
+              />
+            ) : (
+              <path
+                d="M8 2L10 6L14 7L11 10L11.5 14L8 12.5L4.5 14L5 10L2 7L6 6L8 2Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            )}
+          </svg>
+        </button>
+      )}
 
       {/* Botão flutuante de delete */}
       <button className="delete-btn-floating" onClick={handleDelete} title="Excluir nota">

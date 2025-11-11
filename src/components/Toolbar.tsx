@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import ThemeToggle from './ThemeToggle'
 import { Folder } from '../types'
 import './Toolbar.css'
@@ -19,6 +20,8 @@ interface ToolbarProps {
   selectedNotesCount?: number
   onMoveSelectedToFolder?: (folderId: string | null) => void
   onMoveSelectedToMaster?: () => void
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
 }
 
 function Toolbar({
@@ -38,7 +41,40 @@ function Toolbar({
   selectedNotesCount = 0,
   onMoveSelectedToFolder,
   onMoveSelectedToMaster,
+  searchQuery = '',
+  onSearchChange,
 }: ToolbarProps) {
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery)
+  }, [searchQuery])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F2 para focar na busca
+      if (e.key === 'F2' && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+      // Escape para limpar busca
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setLocalSearchQuery('')
+        onSearchChange?.('')
+        searchInputRef.current?.blur()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onSearchChange])
+
+  const handleSearchChange = (value: string) => {
+    setLocalSearchQuery(value)
+    onSearchChange?.(value)
+  }
+
   return (
     <div className="toolbar">
       <div className="toolbar-section">
@@ -71,6 +107,52 @@ function Toolbar({
       </div>
 
       <div className="toolbar-section toolbar-center">
+        {onSearchChange && (
+          <div className="search-container">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              className="search-icon"
+              style={{ position: 'absolute', left: '8px', pointerEvents: 'none' }}
+            >
+              <path
+                d="M7 12A5 5 0 1 0 7 2a5 5 0 0 0 0 10zM13 13l-3-3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="search-input"
+              placeholder="Buscar notas (F2)..."
+              value={localSearchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              title="Buscar por título ou conteúdo (F2 para focar, ESC para limpar)"
+            />
+            {localSearchQuery && (
+              <button
+                className="search-clear"
+                onClick={() => handleSearchChange('')}
+                title="Limpar busca (ESC)"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16">
+                  <path
+                    d="M12 4L4 12M4 4l8 8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+
         <button className="toolbar-btn primary" onClick={onAddNote}>
           <svg width="16" height="16" viewBox="0 0 16 16">
             <path d="M8 2V14M2 8H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

@@ -12,6 +12,9 @@
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
     "electron:dev": "set NODE_ENV=development && electron .",
     "electron:test": "electron .",
     "electron:build": "npm run build && electron-builder",
@@ -37,7 +40,13 @@
     "gh-pages": "^6.3.0",
     "prettier": "^3.3.3",
     "typescript": "^5.5.3",
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/user-event": "^14.5.2",
+    "@vitest/ui": "^2.0.0",
+    "jsdom": "^24.0.0",
+    "vitest": "^2.0.0"
   },
   "build": {
     "appId": "com.theorganizer.app",

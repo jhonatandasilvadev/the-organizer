@@ -9,6 +9,8 @@ export interface Note {
   color: string
   zIndex: number
   folderId?: string | null // ID da pasta que contém a nota (null = master workflow)
+  isPinned?: boolean // Nota fixada no Master Workflow
+  tags?: string[] // Tags da nota
 }
 
 export interface Folder {

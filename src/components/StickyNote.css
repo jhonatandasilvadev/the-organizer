@@ -88,6 +88,51 @@
   outline: none;
 }
 
+/* Botão flutuante de pin */
+.pin-btn-floating {
+  position: absolute;
+  top: -18px;
+  left: -18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 193, 7, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 193, 7, 0.3);
+  color: #ffc107;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  z-index: 10;
+}
+
+.sticky-note:hover .pin-btn-floating,
+.sticky-note.selected .pin-btn-floating,
+.sticky-note.dragging .pin-btn-floating,
+.pin-btn-floating.pinned {
+  opacity: 1;
+}
+
+.pin-btn-floating:hover {
+  background: rgba(255, 193, 7, 0.25);
+  border-color: rgba(255, 193, 7, 0.5);
+  transform: scale(1.1);
+}
+
+.pin-btn-floating:active {
+  transform: scale(0.95);
+}
+
+.pin-btn-floating.pinned {
+  background: rgba(255, 193, 7, 0.3);
+  border-color: #ffc107;
+  color: #ff9800;
+  opacity: 1;
+}
+
 /* Botão flutuante de delete */
 .delete-btn-floating {
   position: absolute;

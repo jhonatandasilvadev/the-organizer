@@ -30,6 +30,7 @@ interface CanvasProps {
   gridSize: number
   selectedNotes?: Set<string>
   onNoteSelect?: (id: string, shiftKey: boolean) => void
+  onTogglePin?: (id: string) => void
 }
 
 function Canvas({
@@ -58,6 +59,7 @@ function Canvas({
   gridSize,
   selectedNotes = new Set(),
   onNoteSelect,
+  onTogglePin,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -235,6 +237,8 @@ function Canvas({
             onGroupDragStart={onGroupDragStart}
             onGroupDrag={onGroupDrag}
             onGroupDragEnd={onGroupDragEnd}
+            onTogglePin={onTogglePin}
+            showPinButton={currentFolderId === null}
           />
         ))}
       </div>
