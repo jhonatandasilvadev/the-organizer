@@ -14,6 +14,10 @@ interface StickyNoteProps {
   zoom?: number
   pan?: { x: number; y: number }
   canvasRef?: React.RefObject<HTMLDivElement>
+  previewPosition?: { x: number; y: number } | null
+  onGroupDragStart?: (id: string) => void
+  onGroupDrag?: (id: string, position: { x: number; y: number }) => void
+  onGroupDragEnd?: (id: string, position: { x: number; y: number }) => void
 }
 
 type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw' | 'n' | 's' | 'e' | 'w' | null
@@ -29,7 +33,11 @@ function StickyNote({
   smoothMovement = true,
   zoom = 1,
   pan = { x: 0, y: 0 },
-  canvasRef
+  canvasRef,
+  previewPosition = null,
+  onGroupDragStart,
+  onGroupDrag,
+  onGroupDragEnd,
 }: StickyNoteProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -71,8 +79,10 @@ function StickyNote({
     
     onBringToFront(note.id)
     setIsDragging(true)
-    
-    // Converter coordenadas da tela para coordenadas do canvas
+
+    // Notifica o início do arraste em grupo
+    onGroupDragStart?.(note.id)
+
     const canvasRect = canvasRef?.current?.getBoundingClientRect()
     if (canvasRect) {
       // Coordenada do mouse no espaço do canvas
@@ -92,7 +102,7 @@ function StickyNote({
     }
     // Limpa posição temporária ao iniciar novo arraste
     setTempPosition(null)
-  }, [note.id, note.x, note.y, onBringToFront, onSelect, isSelected, zoom, pan, canvasRef])
+  }, [note.id, note.x, note.y, onBringToFront, onSelect, isSelected, zoom, pan, canvasRef, onGroupDragStart])
 
   const handleResizeStart = useCallback((e: React.MouseEvent, handle: ResizeHandle) => {
     e.preventDefault()
@@ -123,11 +133,13 @@ function StickyNote({
             const newX = mouseCanvasX - dragStart.x
             const newY = mouseCanvasY - dragStart.y
             setTempPosition({ x: newX, y: newY })
+            onGroupDrag?.(note.id, { x: newX, y: newY })
           } else {
             // Movimento com snap imediato
             const newX = snapToGrid(mouseCanvasX - dragStart.x)
             const newY = snapToGrid(mouseCanvasY - dragStart.y)
             onUpdate(note.id, { x: newX, y: newY })
+            onGroupDrag?.(note.id, { x: newX, y: newY })
           }
         }
       } else if (isResizing && resizeHandle) {
@@ -170,13 +182,25 @@ function StickyNote({
     }
 
     const handleMouseUp = () => {
-      if (isDragging && smoothMovement && tempPosition) {
-        // Ao soltar, aplica snap ao grid
-        const finalX = snapToGrid(tempPosition.x)
-        const finalY = snapToGrid(tempPosition.y)
-        onUpdate(note.id, { x: finalX, y: finalY })
-        setTempPosition(null)
+      if (isDragging) {
+        let finalX = note.x
+        let finalY = note.y
+
+        if (smoothMovement) {
+          if (tempPosition) {
+            finalX = snapToGrid(tempPosition.x)
+            finalY = snapToGrid(tempPosition.y)
+            onUpdate(note.id, { x: finalX, y: finalY })
+            setTempPosition(null)
+          }
+        } else {
+          finalX = note.x
+          finalY = note.y
+        }
+
+        onGroupDragEnd?.(note.id, { x: finalX, y: finalY })
       }
+
       setIsDragging(false)
       setIsResizing(false)
       setResizeHandle(null)
@@ -191,7 +215,7 @@ function StickyNote({
         window.removeEventListener('mouseup', handleMouseUp)
       }
     }
-  }, [isDragging, isResizing, dragStart, resizeStart, resizeHandle, note, onUpdate, snapToGrid, gridSize, smoothMovement, tempPosition, zoom, pan, canvasRef])
+  }, [isDragging, isResizing, dragStart, resizeStart, resizeHandle, note, onUpdate, snapToGrid, gridSize, smoothMovement, tempPosition, zoom, pan, canvasRef, onGroupDrag, onGroupDragEnd])
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate(note.id, { title: e.target.value })
@@ -218,9 +242,9 @@ function StickyNote({
   const textColor = isBlackNote ? 'rgba(255, 255, 255, 0.9)' : 'var(--note-text)'
   const placeholderClass = isBlackNote ? 'note-content black-note' : 'note-content'
 
-  // Usa posição temporária durante o arraste para movimento suave
-  const displayX = tempPosition?.x ?? note.x
-  const displayY = tempPosition?.y ?? note.y
+  const effectivePreview = !isDragging ? previewPosition : null
+  const displayX = (isDragging ? tempPosition?.x : effectivePreview?.x) ?? note.x
+  const displayY = (isDragging ? tempPosition?.y : effectivePreview?.y) ?? note.y
 
   return (
     <div

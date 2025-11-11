@@ -1,10 +1,25 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
 import StickyNote from './StickyNote'
-import { Note } from '../types'
+import FolderCard from './FolderCard'
+import { Note, Folder } from '../types'
 import './Canvas.css'
 
 interface CanvasProps {
   notes: Note[]
+  folders?: Folder[]
+  currentFolderId?: string | null
+  onOpenFolder?: (folderId: string) => void
+  onRenameFolder?: (folderId: string, name: string) => void
+  onRequestEditFolder?: (folderId: string) => void
+  editingFolderId?: string | null
+  onMoveSelectedToFolder?: (folderId: string) => void
+  onUpdateFolderPosition?: (folderId: string, position: { x: number; y: number }) => void
+  previewPositions?: Record<string, { x: number; y: number }>
+  onGroupDragStart?: (id: string) => void
+  onGroupDrag?: (id: string, position: { x: number; y: number }) => void
+  onGroupDragEnd?: (id: string, position: { x: number; y: number }) => void
+  onClearSelection?: () => void
+  onDeleteFolder?: (folderId: string) => void
   onUpdateNote: (id: string, updates: Partial<Note>) => void
   onDeleteNote: (id: string) => void
   onBringToFront: (id: string) => void
@@ -19,6 +34,20 @@ interface CanvasProps {
 
 function Canvas({
   notes,
+  folders = [],
+  currentFolderId = null,
+  onOpenFolder,
+  onRenameFolder,
+  onRequestEditFolder,
+  editingFolderId = null,
+  onMoveSelectedToFolder,
+  onUpdateFolderPosition,
+  previewPositions,
+  onGroupDragStart,
+  onGroupDrag,
+  onGroupDragEnd,
+  onClearSelection,
+  onDeleteFolder,
   onUpdateNote,
   onDeleteNote,
   onBringToFront,
@@ -31,6 +60,7 @@ function Canvas({
   onNoteSelect,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
 
@@ -66,8 +96,24 @@ function Canvas({
       e.preventDefault()
       setIsPanning(true)
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+      return
     }
-  }, [pan])
+
+    if (e.button === 0) {
+      const target = e.target as HTMLElement
+      if (target === canvasRef.current || target.classList.contains('grid')) {
+        onClearSelection?.()
+      }
+    }
+  }, [pan, onClearSelection])
+
+  const handleBackgroundMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (isPanning) return
+    if (e.ctrlKey) return
+    if (e.target === contentRef.current) {
+      onClearSelection?.()
+    }
+  }, [onClearSelection, isPanning])
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isPanning) {
@@ -135,11 +181,32 @@ function Canvas({
     >
       {gridPattern()}
       <div
+        ref={contentRef}
         className="canvas-content"
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
         }}
+        onMouseDown={handleBackgroundMouseDown}
       >
+        {currentFolderId === null && folders.map(folder => (
+          <FolderCard
+            key={folder.id}
+            folder={folder}
+            isActive={editingFolderId === folder.id}
+            isEditing={editingFolderId === folder.id}
+            selectedNotesCount={selectedNotes.size}
+            onOpen={(id) => onOpenFolder?.(id)}
+            onMoveSelected={(id) => onMoveSelectedToFolder?.(id)}
+            onRename={(id, name) => onRenameFolder?.(id, name)}
+            onRequestEdit={(id) => onRequestEditFolder?.(id)}
+            onDelete={() => onDeleteFolder?.(folder.id)}
+            onUpdatePosition={(position) => onUpdateFolderPosition?.(folder.id, position)}
+            gridSize={gridSize}
+            zoom={zoom}
+            pan={pan}
+            canvasRef={canvasRef}
+          />
+        ))}
         {notes.map(note => (
           <StickyNote
             key={note.id}
@@ -154,6 +221,10 @@ function Canvas({
             zoom={zoom}
             pan={pan}
             canvasRef={canvasRef}
+            previewPosition={previewPositions?.[note.id] ?? null}
+            onGroupDragStart={onGroupDragStart}
+            onGroupDrag={onGroupDrag}
+            onGroupDragEnd={onGroupDragEnd}
           />
         ))}
       </div>

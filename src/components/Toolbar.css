@@ -73,6 +73,30 @@
   transform: translateY(0);
 }
 
+.toolbar-btn.secondary {
+  background: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+}
+
+.toolbar-btn.secondary:hover {
+  background: rgba(0, 122, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.toolbar-btn.secondary:active {
+  transform: translateY(0);
+}
+
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selection-actions svg {
+  display: block;
+}
+
 .color-picker {
   display: flex;
   gap: 8px;
@@ -197,11 +221,6 @@
   background: rgba(0, 122, 255, 0.1);
   color: #007aff;
   transform: translateY(-1px);
-}
-
-.move-to-folder-menu {
-  display: flex;
-  align-items: center;
 }
 
 .folder-select {

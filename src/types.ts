@@ -15,6 +15,8 @@ export interface Folder {
   id: string;
   name: string;
   createdAt: number;
+  x: number;
+  y: number;
 }
 
 export interface Position {

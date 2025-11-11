@@ -18,6 +18,7 @@ interface ToolbarProps {
   onNavigateToMaster?: () => void
   selectedNotesCount?: number
   onMoveSelectedToFolder?: (folderId: string | null) => void
+  onMoveSelectedToMaster?: () => void
 }
 
 function Toolbar({
@@ -36,6 +37,7 @@ function Toolbar({
   onNavigateToMaster,
   selectedNotesCount = 0,
   onMoveSelectedToFolder,
+  onMoveSelectedToMaster,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -96,23 +98,54 @@ function Toolbar({
           ))}
         </div>
 
-        {selectedNotesCount > 0 && onMoveSelectedToFolder && folders.length > 0 && (
-          <div className="move-to-folder-menu">
-            <select 
-              className="folder-select"
-              onChange={(e) => {
-                const folderId = e.target.value === 'master' ? null : e.target.value
-                onMoveSelectedToFolder(folderId)
-                e.target.value = ''
-              }}
-              defaultValue=""
-            >
-              <option value="" disabled>Mover para pasta...</option>
-              <option value="master">Master Workflow</option>
-              {folders.map(folder => (
-                <option key={folder.id} value={folder.id}>{folder.name}</option>
-              ))}
-            </select>
+        {selectedNotesCount > 0 && (
+          <div className="selection-actions">
+            {currentFolderId && onMoveSelectedToMaster && (
+              <button
+                className="toolbar-btn secondary"
+                onClick={onMoveSelectedToMaster}
+                title="Mover selecionadas para o Master Workflow"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16">
+                  <path
+                    d="M3 5.5A2.5 2.5 0 0 1 5.5 3h5A2.5 2.5 0 0 1 13 5.5v5A2.5 2.5 0 0 1 10.5 13h-5A2.5 2.5 0 0 1 3 10.5V9"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M2.5 8.5 5 6M2.5 8.5 5 11"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Voltar ao Master
+              </button>
+            )}
+
+            {onMoveSelectedToFolder && folders.length > 0 && (
+              <div className="move-to-folder-menu">
+                <select
+                  className="folder-select"
+                  onChange={(e) => {
+                    const folderId = e.target.value === 'master' ? null : e.target.value
+                    onMoveSelectedToFolder(folderId)
+                    e.target.value = ''
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Mover para pasta...</option>
+                  <option value="master">Master Workflow</option>
+                  {folders.map(folder => (
+                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 
